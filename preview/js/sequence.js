@@ -12,15 +12,16 @@
  *   data-frame-pattern="assets/sequence/frame_{n}.webp"
  *   data-frame-pad="4"            ({n} is 1-based and zero padded)
  *
- * Framing: the whole width of every frame is always shown (the pods sit far
- * right at the start and the glasses fill the width at the end). In a window
- * wider than 16:9 the top and bottom are cropped; in a taller one the
+ * Framing: the whole width of every frame is always shown. In a window
+ * wider than 16:9 the top and bottom are cropped (more from the bottom); in a
+ * taller one the
  * backdrop colours sampled from frame 1 fill the space above and below.
- * The carousel <img> elements use the same geometry in css/site.css.
+ * The carousel <img> elements use the same geometry in css/site.css, and
+ * hero.js and callouts.js place their text from it.
  *
  * When the last frame is on screen the section gets .at-end, and the colour
  * carousel (carousel.js) takes over the same stage. The last frame and the
- * violet carousel still must be the same image, so the handover is invisible.
+ * white carousel still must be the same image, so the handover is invisible.
  */
 (function () {
   'use strict';
@@ -39,25 +40,23 @@
 
   // Scroll budget for each phase, in viewport heights (tune by feel). The
   // pinned section is these added up plus one viewport for the stage itself.
-  //   opening   the lids open and the name moves into the bar (lids.js);
-  //             frame 1 holds
-  //   frames    the frame animation
+  //   frames    the camera move; the hero text moves with it (hero.js)
+  //   statement the last frame holds; the statement fades in, then out
   //   callout   per callout on the held last frame (callouts.js)
   //   hold      after the last callout
   //   fade      callouts fade out while the carousel controls fade in
   //   carousel  the carousel, live, before the stage unpins
-  var VH = { opening: 80, frames: 275, callout: 38, hold: 45, fade: 30, carousel: 45 };
+  var VH = { frames: 275, statement: 90, callout: 38, hold: 45, fade: 30, carousel: 45 };
   var phase;                       // the budget above as shares of 0..1
   function computePhases() {
     var n = window.palperaCallouts ? window.palperaCallouts.count() : 0;
-    var total = VH.opening + VH.frames + n * VH.callout + VH.hold + VH.fade + VH.carousel;
-    var o = VH.opening / total;
-    var f = o + VH.frames / total, c = n * VH.callout / total;
+    var total = VH.frames + VH.statement + n * VH.callout + VH.hold + VH.fade + VH.carousel;
+    var f = VH.frames / total, st = f + VH.statement / total, c = n * VH.callout / total;
     phase = {
-      opening: o,
-      frames: [o, f],
-      callouts: [f, f + c],
-      fade: [f + c + VH.hold / total, f + c + (VH.hold + VH.fade) / total],
+      frames: [0, f],
+      statement: [f, st],
+      callouts: [st, st + c],
+      fade: [st + c + VH.hold / total, st + c + (VH.hold + VH.fade) / total],
       total: total
     };
     phase.carouselMid = (phase.fade[1] + 1) / 2;
@@ -75,8 +74,8 @@
   var MAX_PARALLEL = 6;
 
   // Backdrop colours, replaced by the ones sampled from frame 1.
-  var TOP = '#CFC9E0';
-  var BOTTOM = '#DCD7EA';
+  var TOP = '#C5D3CC';
+  var BOTTOM = '#C5D3CC';
 
   var wideQuery = window.matchMedia('(min-width: 900px)');
   var calmQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -213,10 +212,7 @@
     var y = window.scrollY;
     var rect = section.getBoundingClientRect();
     M.top = rect.top + y;
-    // The stage sticks below the 64 px bar (CSS top), so it unpins that much
-    // earlier.
-    var stick = parseFloat(getComputedStyle(stage).top) || 0;
-    M.range = Math.max(1, rect.height - stage.offsetHeight - stick);
+    M.range = Math.max(1, rect.height - stage.offsetHeight);
     M.anchors = anchors.map(function (el) {
       if (!el) return null;
       var r = el.getBoundingClientRect();
@@ -276,7 +272,10 @@
     var dpr = cw / Math.max(1, cssW);
     var dw = cw;
     var dh = Math.round(img.naturalHeight * cw / img.naturalWidth);
-    var dy = Math.round((ch - dh) / 2);
+    // Taller than 16:9: centred. Wider: crop a quarter of the excess from
+    // the top and the rest from the bottom, so the pod's top and the
+    // callouts above it stay in view.
+    var dy = Math.round((ch - dh) * (dh > ch ? 0.25 : 0.5));
     var fade = Math.round(dh * FADE);
 
     if (dy > 0) {
@@ -316,6 +315,9 @@
       section.style.setProperty('--fade-on', dy > 0 ? '1' : '0');
       if (window.palperaCallouts) {
         window.palperaCallouts.layout(cssW, dy / dpr, dh / dpr, cssH);
+      }
+      if (window.palperaHero) {
+        window.palperaHero.layout(cssW, dy / dpr, dh / dpr, cssH);
       }
     }
   }
@@ -378,15 +380,20 @@
     }
 
     // Hand over only when the real last frame is actually on the canvas
-    // (or when a keyboard visitor jumped here: the violet carousel still is
+    // (or when a keyboard visitor jumped here: the white carousel still is
     // the same picture, so it can stand in until the frame arrives).
     var fadeT = clamp01((shown - phase.fade[0]) / (phase.fade[1] - phase.fade[0]));
     setAtEnd(index === COUNT - 1 && fadeT >= 0.5 &&
              (img === frames[COUNT - 1] || keyboardJump));
     if (index !== COUNT - 1) keyboardJump = false;
 
-    // The lids follow the same smoothed value as everything else.
-    if (window.palperaLids) window.palperaLids.update(clamp01(shown / phase.opening));
+    // The hero text follows the same smoothed value as everything else.
+    if (window.palperaHero) {
+      var su = clamp01((shown - phase.statement[0]) / (phase.statement[1] - phase.statement[0]));
+      var sv = function (v) { v = clamp01(v); return v * v * (3 - 2 * v); };
+      window.palperaHero.update(clamp01(shown / phase.frames[1]),
+                                sv(su / 0.3) * (1 - sv((su - 0.7) / 0.3)));
+    }
 
     // Callouts and carousel controls follow the same smoothed value, so they
     // scrub backwards exactly as they play forwards. Opacity and transform
@@ -420,13 +427,14 @@
     // Only the carousel: the callout labels have their own buttons.
     if (atEnd || !(e.target.closest && e.target.closest('[data-carousel]'))) return;
 
-    // Tabbing forward from above (the bar or the lids): stop at the callout
+    // Tabbing forward from above (the hero signup): stop at the callout
     // buttons first. Scroll to the hold, where they are live, and focus the
     // first one; Tab from the last one comes back here and goes on.
     var from = e.relatedTarget;
     var faces = section.querySelectorAll('button.co-face');
-    if (faces.length && from && !section.contains(from) &&
-        (from.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+    var layer = section.querySelector('[data-callouts]');
+    if (faces.length && from && layer && !layer.contains(from) && !e.target.contains(from) &&
+        (from.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING)) {
       measure();
       window.scrollTo({ top: M.top + M.range * (phase.callouts[1] + phase.fade[0]) / 2, behavior: 'instant' });
       readScroll();
@@ -458,7 +466,6 @@
   function enable() {
     active = true;
     root.classList.add('seq');
-    if (window.palperaLids) window.palperaLids.layout();
     window.addEventListener('scroll', onScroll, { passive: true });
     section.addEventListener('focusin', onFocusIn);
     sizeDirty = true;
@@ -478,7 +485,7 @@
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
     setAtEnd(false);
     clearControls();
-    if (window.palperaLids) window.palperaLids.clear();
+    if (window.palperaHero) window.palperaHero.clear();
   }
 
   // callouts.js loads the spec data after this script starts; the scroll
@@ -497,7 +504,7 @@
   // the visitor somewhere else on the page. What is at the top of the window
   // is noted on every scroll (by the time a resize event arrives the layout
   // has already changed) and brought back after each resize.
-  var anchors = [section.ownerDocument.querySelector('.hero'), section]
+  var anchors = [section]
     .concat(Array.prototype.slice.call(document.querySelectorAll('main > section, .site-footer')));
 
   // From the cached positions, so it is cheap enough to run on every scroll.
@@ -527,8 +534,6 @@
       y = a.seq < 0.35 ? 0 : window.scrollY + section.getBoundingClientRect().top;
     } else if (active && a.el === section) {
       y = endScrollY();                    // static carousel -> live carousel
-    } else if (active && a.el.classList.contains('hero')) {
-      y = 0;
     } else {
       y = window.scrollY + a.el.getBoundingClientRect().top - a.top;
     }
@@ -579,6 +584,11 @@
     new ResizeObserver(function () { measure(); readScroll(); requestTick(); }).observe(document.body);
   }
 
+  // Web fonts change the text sizes the hero and callouts are placed from.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { geometry = ''; drawnImg = null; requestTick(); });
+  }
+
   // The inline script in <head> already chose the version before first
   // paint; start the scroll version if it did.
   if (root.classList.contains('seq')) enable();
@@ -586,10 +596,10 @@
 
   // Debug handle for checking load progress in the console.
   window.palperaSequence = {
-    // Scroll to where the lids have just finished opening (keyboard path).
-    scrollToOpened: function () {
+    // Jump to a point of the pinned stage, 0..1 (testing).
+    jump: function (p) {
       measure();
-      window.scrollTo({ top: M.top + M.range * phase.opening + 2, behavior: 'instant' });
+      window.scrollTo({ top: M.top + M.range * p, behavior: 'instant' });
       readScroll(); shown = target; requestTick();
     },
     redraw: function () { requestTick(); },

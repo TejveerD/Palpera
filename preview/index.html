@@ -1,25 +1,25 @@
 <!doctype html>
-<html lang="en" data-base="../">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Preview of the L2 "Eyelid" redesign (docs/L2-REDESIGN.md). Not for
-       search engines until TJ promotes it to the root. -->
+  <!-- Preview of the fluted-glass redesign. Not for search engines until TJ
+       promotes it to the root. -->
   <meta name="robots" content="noindex, nofollow">
   <title>Palpera: Your Glasses, Made Aware</title>
   <meta name="description" content="Palpera is a small pod in development that clips onto the glasses you already wear. No camera, no screen. It follows your blinking and tells you when your eyes need rest.">
-  <meta name="theme-color" content="#2A1F5C">
+  <meta name="theme-color" content="#C5D3CC">
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Hanken+Grotesk:wght@400;500&display=swap">
-
+  <!-- Fonts are self-hosted (fonts/): no request to Google or any other
+       third party when the page loads. -->
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/site.css">
 
-  <!-- Decide before first paint whether this visitor gets the scroll sequence
-       (and the lids). Phones (< 900 px) and reduced-motion visitors get the
-       static version and never request the frame files. -->
+  <!-- Decide before first paint whether this visitor gets the scroll
+       sequence. Phones (< 900 px) and reduced-motion visitors get the static
+       version and never request the frame files. -->
   <script>
     (function () {
       var wide = window.matchMedia('(min-width: 900px)').matches;
@@ -29,130 +29,120 @@
     })();
   </script>
   <script src="js/callouts.js" defer></script>
-  <script src="js/lids.js" defer></script>
+  <script src="js/hero.js" defer></script>
   <script src="js/sequence.js" defer></script>
   <script src="js/carousel.js" defer></script>
   <script src="js/signup.js" defer></script>
   <script src="js/team.js" defer></script>
+  <script src="js/consent.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-
   <main id="main">
-    <div class="intro" id="top">
-      <!-- The lids. Desktop: fixed over the stage, they open on scroll
-           (js/lids.js). Phones and reduced motion: a violet block with the
-           name, the still, then a violet block with the headline and signup. -->
-      <div class="lids" data-lids>
-        <div class="lid lid-top" data-lid-top>
-          <h1 class="name" data-name><a href="#top">Palpera</a></h1>
-        </div>
+    <!-- The pinned stage (desktop) or the plain top of the page (phones and
+         reduced motion). sequence.js only fetches frames when <html> has the
+         .seq class. -->
+    <section class="sequence" id="top" aria-label="Palpera"
+             data-frames="60"
+             data-frame-pattern="assets/sequence/frame_{n}.webp"
+             data-frame-pad="4">
+      <div class="stage">
+        <canvas class="stage-canvas" aria-hidden="true"></canvas>
 
-        <figure class="lids-still">
-          <img src="../assets/hero/stack.webp" width="1600" height="900"
-               alt="Concept render of five Palpera pods in a staggered row: violet in front, with red, graphite, silver and sand behind.">
-        </figure>
+        <!-- Text over the frames (desktop), moved by hero.js from the same
+             smoothed scroll value as the frames. On phones it is the plain
+             top of the page. -->
+        <div class="hero" data-hero>
+          <header class="top">
+            <a class="brand" href="#top" data-brand>Palpera</a>
+            <nav class="top-nav" aria-label="Main" data-nav>
+              <a class="top-link" href="#how">How it works</a>
+              <a class="top-link" href="#specs">Specs</a>
+              <a class="top-link" href="#who" data-team-link hidden>Who we are</a>
+            </nav>
+          </header>
 
-        <div class="lid lid-bottom" data-lid-bottom>
-          <div class="lid-content" data-lid-content>
-            <p class="headline">Your Glasses, Made Aware.</p>
-            <form class="signup signup-dark" data-signup novalidate>
+          <figure class="hero-still">
+            <img src="assets/stills/s1.webp" width="1600" height="900"
+                 alt="Concept render: glasses half hidden behind a wall of fluted glass, with a white Palpera pod on the temple.">
+            <figcaption class="render-label">Concept render. In development.</figcaption>
+          </figure>
+
+          <div class="hero-block" data-hero-block>
+            <h1 class="headline">Your Glasses, Made Aware.</h1>
+            <p class="hero-text">A small pod for the glasses you already wear. It uses an infrared sensor, with no camera anywhere in it.</p>
+            <form class="signup" data-signup novalidate>
               <label class="signup-label" for="email-hero">Email address</label>
               <div class="signup-row">
-                <input id="email-hero" class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
-                <button class="btn btn-bone" type="submit">Notify me</button>
+                <input id="email-hero" class="input" type="email" name="email" autocomplete="email" required>
+                <button class="btn" type="submit">Notify me</button>
               </div>
+              <div class="consent">
+                <input id="consent-hero" type="checkbox" name="consent" value="yes" required aria-describedby="consent-hero-error">
+                <label for="consent-hero">Email me when Palpera is ready. I have read the <a href="privacy.html">privacy policy</a>.</label>
+              </div>
+              <p class="consent-error" id="consent-hero-error" data-consent-error></p>
               <input class="gotcha" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
-              <p class="small-print">One email when it is ready. Concept render; the product is in development.</p>
+              <p class="small-print">One email when it is ready.</p>
               <p class="signup-status" role="status" aria-live="polite"></p>
             </form>
           </div>
+
+          <p class="statement" data-statement>It follows your blinking. It never sees you.</p>
+        </div>
+
+        <!-- Callouts on the held last frame (desktop). Built by callouts.js
+             from data/specs.json and data/anchors.json. -->
+        <div class="callouts" data-callouts>
+          <svg class="co-lines" aria-hidden="true" focusable="false"></svg>
+          <div class="co-rings" data-callout-rings aria-hidden="true"></div>
+          <div class="co-labels" data-callout-labels></div>
+        </div>
+
+        <div class="carousel" data-carousel tabindex="0" role="group" id="colours"
+             aria-roledescription="carousel" aria-label="Pod colours. Use the left and right arrow keys to change colour.">
+          <div class="carousel-view" data-carousel-view>
+            <img class="carousel-img is-active" data-colour="white" src="assets/colours/white.webp" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Concept render, close up: a white Palpera pod clipped to the temple of green glasses, with its sensor arm reaching toward the lens.">
+            <img class="carousel-img" data-colour="sand" src="assets/colours/sand.webp" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Concept render, close up: a sand Palpera pod clipped to the temple of green glasses.">
+            <img class="carousel-img" data-colour="graphite" src="assets/colours/graphite.webp" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Concept render, close up: a graphite Palpera pod clipped to the temple of green glasses.">
+            <img class="carousel-img" data-colour="silver" src="assets/colours/silver.webp" width="1600" height="900" loading="lazy" decoding="async"
+                 alt="Concept render, close up: a silver Palpera pod clipped to the temple of green glasses.">
+          </div>
+
+          <div class="carousel-controls">
+            <button class="arrow" type="button" data-carousel-prev aria-label="Previous colour">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <div class="dots">
+              <button class="dot" type="button" data-index="0" aria-label="Show white pod" aria-pressed="true" style="--c:#F2EFE6"></button>
+              <button class="dot" type="button" data-index="1" aria-label="Show sand pod" aria-pressed="false" style="--c:#D8C7A8"></button>
+              <button class="dot" type="button" data-index="2" aria-label="Show graphite pod" aria-pressed="false" style="--c:#3A3D45"></button>
+              <button class="dot" type="button" data-index="3" aria-label="Show silver pod" aria-pressed="false" style="--c:#C9CCD3"></button>
+            </div>
+            <button class="arrow" type="button" data-carousel-next aria-label="Next colour">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <p class="visually-hidden" data-carousel-live aria-live="polite"></p>
+        </div>
+
+        <p class="render-label stage-label">Concept render. In development.</p>
+
+        <!-- The callouts as a plain list (phones, reduced motion). -->
+        <div class="callout-static">
+          <h2 class="co-title">What is in the pod.</h2>
+          <p>One sensor, one battery and a clip. Nothing else to wear.</p>
+          <dl class="spec-list" data-callout-list></dl>
         </div>
       </div>
+    </section>
 
-    <!-- The bar: 64 px, violet, pinned for the whole page. It comes after the
-           lids in the markup so the keyboard reaches the landing signup first. On desktop its
-         violet is the top lid's last strip and its name is the hero name
-         (inside the top lid); the links sit on top. -->
-    <header class="bar">
-      <a class="bar-name" href="#top">Palpera</a>
-      <nav class="bar-nav" aria-label="Main" data-bar-links>
-        <a class="bar-link" href="#how">How it works</a>
-        <a class="bar-link" href="#where">Where we are</a>
-        <a class="bar-link" href="#who" data-team-link hidden>Who we are</a>
-        <a class="btn btn-bone bar-cta" href="#notify">Notify me</a>
-      </nav>
-    </header>
-
-      <!-- Scroll sequence + colour carousel. sequence.js only fetches frames when
-           <html> has the .seq class. -->
-      <section class="sequence" id="pod" aria-label="The pod on a pair of glasses"
-               data-frames="299"
-               data-frame-pattern="../assets/sequence/frame_{n}.webp"
-               data-frame-pad="4">
-        <div class="stage">
-          <canvas class="stage-canvas" aria-hidden="true"></canvas>
-
-          <!-- Callouts on the held last frame (desktop). Built by callouts.js
-               from data/specs.json and data/anchors.json. -->
-          <div class="callouts" data-callouts>
-            <svg class="co-lines" aria-hidden="true" focusable="false"></svg>
-            <div class="co-rings" data-callout-rings aria-hidden="true"></div>
-            <div class="co-labels" data-callout-labels></div>
-            <div class="co-intro" data-callout-heading>
-              <h2 class="co-title">What is in the pod.</h2>
-              <p>One sensor, one battery and a clip. Nothing else to wear.</p>
-            </div>
-          </div>
-
-          <div class="carousel" data-carousel tabindex="0" role="group"
-               aria-roledescription="carousel" aria-label="Pod colours. Use the left and right arrow keys to change colour.">
-            <div class="carousel-view" data-carousel-view>
-              <img class="carousel-img is-active" data-colour="violet" src="../assets/colours/violet.webp" width="1600" height="900" loading="lazy" decoding="async"
-                   alt="Concept render of a violet Palpera pod clipped to the temple of round acetate glasses, three-quarter view.">
-              <img class="carousel-img" data-colour="red" src="../assets/colours/red.webp" width="1600" height="900" loading="lazy" decoding="async"
-                   alt="Concept render of a red Palpera pod clipped to the temple of round acetate glasses, three-quarter view.">
-              <img class="carousel-img" data-colour="graphite" src="../assets/colours/graphite.webp" width="1600" height="900" loading="lazy" decoding="async"
-                   alt="Concept render of a graphite Palpera pod clipped to the temple of round acetate glasses, three-quarter view.">
-              <img class="carousel-img" data-colour="silver" src="../assets/colours/silver.webp" width="1600" height="900" loading="lazy" decoding="async"
-                   alt="Concept render of a silver Palpera pod clipped to the temple of round acetate glasses, three-quarter view.">
-              <img class="carousel-img" data-colour="sand" src="../assets/colours/sand.webp" width="1600" height="900" loading="lazy" decoding="async"
-                   alt="Concept render of a sand Palpera pod clipped to the temple of round acetate glasses, three-quarter view.">
-            </div>
-
-            <div class="carousel-controls">
-              <button class="arrow" type="button" data-carousel-prev aria-label="Previous colour">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>
-              </button>
-              <div class="dots">
-                <button class="dot" type="button" data-index="0" aria-label="Show violet pod" aria-pressed="true" style="--c:#5A3FC0"></button>
-                <button class="dot" type="button" data-index="1" aria-label="Show red pod" aria-pressed="false" style="--c:#C8322B"></button>
-                <button class="dot" type="button" data-index="2" aria-label="Show graphite pod" aria-pressed="false" style="--c:#3A3D45"></button>
-                <button class="dot" type="button" data-index="3" aria-label="Show silver pod" aria-pressed="false" style="--c:#C9CCD3"></button>
-                <button class="dot" type="button" data-index="4" aria-label="Show sand pod" aria-pressed="false" style="--c:#D8C7A8"></button>
-              </div>
-              <button class="arrow" type="button" data-carousel-next aria-label="Next colour">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>
-              </button>
-            </div>
-            <p class="visually-hidden" data-carousel-live aria-live="polite"></p>
-          </div>
-
-          <p class="render-label stage-label">Concept render</p>
-
-          <!-- The same callouts as a plain list (phones, reduced motion). -->
-          <div class="callout-static">
-            <h2 class="co-title">What is in the pod.</h2>
-            <p>One sensor, one battery and a clip. Nothing else to wear.</p>
-            <dl class="spec-list" data-callout-list></dl>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- The other specs (brief 6.7), from data/specs.json. -->
-    <section class="band band-alt specs" data-specs aria-labelledby="specs-title">
+    <!-- The other specs, from data/specs.json. -->
+    <section class="band band-light specs" id="specs" data-specs aria-labelledby="specs-title">
       <div class="wrap">
         <h2 id="specs-title">The details so far</h2>
         <dl class="spec-list" data-spec-list></dl>
@@ -191,7 +181,7 @@
       </div>
     </section>
 
-    <section class="band band-alt how" id="how" aria-labelledby="how-title">
+    <section class="band band-light how" id="how" aria-labelledby="how-title">
       <div class="wrap">
         <h2 id="how-title">How it works</h2>
         <ol class="steps">
@@ -223,24 +213,30 @@
     </section>
 
     <!-- Who we are: built from data/team.json by js/team.js. Not shown, and
-         its bar link stays hidden, while the file has no people in it. -->
-    <section class="band band-alt who" id="who" aria-labelledby="who-title" data-team hidden>
+         its link stays hidden, while the file has no people in it. -->
+    <section class="band band-light who" id="who" aria-labelledby="who-title" data-team hidden>
       <div class="wrap">
         <h2 id="who-title">Who we are</h2>
         <ul class="team-list" data-team-list></ul>
       </div>
     </section>
 
-    <section class="band band-violet closing" id="notify" aria-labelledby="notify-title">
+    <section class="band closing" id="notify" aria-labelledby="notify-title">
       <div class="wrap narrow">
         <h2 id="notify-title">Be the first to know when it is ready.</h2>
-        <form class="signup signup-dark" data-signup novalidate>
-          <label class="signup-label" for="email-closing">One email when we launch. Nothing else.</label>
+        <form class="signup" data-signup novalidate>
+          <label class="signup-label" for="email-closing">Email address</label>
           <div class="signup-row">
-            <input id="email-closing" class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
-            <button class="btn btn-bone" type="submit">Notify me</button>
+            <input id="email-closing" class="input" type="email" name="email" autocomplete="email" required>
+            <button class="btn" type="submit">Notify me</button>
           </div>
+          <div class="consent">
+            <input id="consent-closing" type="checkbox" name="consent" value="yes" required aria-describedby="consent-closing-error">
+            <label for="consent-closing">Email me when Palpera is ready. I have read the <a href="privacy.html">privacy policy</a>.</label>
+          </div>
+          <p class="consent-error" id="consent-closing-error" data-consent-error></p>
           <input class="gotcha" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <p class="small-print">One email when it is ready.</p>
           <p class="signup-status" role="status" aria-live="polite"></p>
         </form>
       </div>
@@ -248,10 +244,16 @@
   </main>
 
   <footer class="site-footer">
-    <div class="wrap footer-inner">
+    <div class="wrap">
       <p>Palpera is a wellness product, not a medical device.</p>
-      <!-- TODO before launch: replace with TJ's contact address (brief, section 8.3). -->
-      <p class="contact">[YOUR CONTACT EMAIL]</p>
+      <nav class="footer-legal" aria-label="Legal">
+        <a href="privacy.html">Privacy policy</a>
+        <a href="terms.html">Terms and conditions</a>
+        <a href="cookies.html">Cookie policy</a>
+        <a href="refund.html">Refund policy</a>
+        <span class="contact">[CONTACT EMAIL]</span>
+        <button class="link-button" type="button" data-consent-open hidden>Cookie settings</button>
+      </nav>
     </div>
   </footer>
 </body>

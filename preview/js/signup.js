@@ -19,11 +19,18 @@ var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
   }
 
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Sent with each signup as policy_version, so every stored signup records
+  // which privacy policy the person read (palpera-legal-pages.md, section 3).
+  // Set to the policies' effective date when they go live.
+  var POLICY_VERSION = '[EFFECTIVE DATE]';
 
   Array.prototype.forEach.call(document.querySelectorAll('form[data-signup]'), function (form) {
     var input = form.querySelector('input[type="email"]');
     var button = form.querySelector('button[type="submit"]');
     var status = form.querySelector('.signup-status');
+    var consent = form.querySelector('input[name="consent"]');
+    var consentError = form.querySelector('[data-consent-error]');
+    var gotcha = form.querySelector('input[name="_gotcha"]');
 
     form.setAttribute('action', FORMSPREE_ENDPOINT);
     form.setAttribute('method', 'POST');
@@ -32,6 +39,19 @@ var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
       status.textContent = text;
       status.classList.toggle('is-ok', kind === 'ok');
       status.classList.toggle('is-error', kind === 'error');
+    }
+
+    // The consent message sits next to the checkbox, not in the status line.
+    function consentSay(text) {
+      if (consentError) consentError.textContent = text;
+      if (text) consent.setAttribute('aria-invalid', 'true');
+      else consent.removeAttribute('aria-invalid');
+    }
+
+    if (consent) {
+      consent.addEventListener('change', function () {
+        if (consent.checked) consentSay('');
+      });
     }
 
     input.addEventListener('input', function () {
@@ -52,6 +72,13 @@ var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
         return;
       }
 
+      if (consent && !consent.checked) {
+        say('', null);
+        consentSay('Tick the box so we can email you.');
+        consent.focus();
+        return;
+      }
+
       if (notConnected) {
         say('Signup is not connected yet. Please try again soon.', 'error');
         return;
@@ -60,9 +87,18 @@ var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
       button.disabled = true;
       say('Sending…', null);
 
+      // Only what is needed: the address and a record of the consent
+      // (palpera-legal-pages.md, section 3), plus the spam honeypot. Nothing
+      // else from the page or the browser is sent.
+      var body = new FormData();
+      body.append('email', value);
+      body.append('consent', 'yes');
+      body.append('policy_version', POLICY_VERSION);
+      body.append('_gotcha', gotcha ? gotcha.value : '');
+
       fetch(FORMSPREE_ENDPOINT, {
         method: 'POST',
-        body: new FormData(form),
+        body: body,
         headers: { Accept: 'application/json' }
       }).then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);

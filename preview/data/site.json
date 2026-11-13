@@ -1,0 +1,4 @@
+{
+  "_help": "nonEssential: false means the site loads nothing beyond itself and shows no cookie banner. Set it to true only together with updated privacy and cookie policies, and load any analytics or embed through js/consent.js.",
+  "nonEssential": false
+}
