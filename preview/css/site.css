@@ -1,5 +1,30 @@
 /* Palpera, L2 "Eyelid" (docs/L2-REDESIGN.md). */
 
+/* Self-hosted fonts (SIL Open Font License; licences in fonts/). Loading
+   them from our own server keeps visitors' IP addresses away from Google. */
+@font-face {
+  font-family: "Bodoni Moda";
+  font-style: normal;
+  font-weight: 400 900;              /* variable: weight and optical size */
+  font-display: swap;
+  src: url("../fonts/bodoni-moda-latin-opsz-normal.woff2") format("woff2-variations"),
+       url("../fonts/bodoni-moda-latin-opsz-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/hanken-grotesk-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/hanken-grotesk-latin-500-normal.woff2") format("woff2");
+}
+
 :root {
   /* Colour (section 3) */
   --violet: #2A1F5C;      /* lids, bar, closing band; the one interactive colour on light surfaces */
@@ -417,3 +442,78 @@ body { padding-top: 56px; }
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
 .footer-inner p { margin: 0; }
 .seq .bar .bar-link[hidden] { display: none; }
+
+/* ---------- Form consent ---------- */
+
+.consent {
+  display: flex; align-items: flex-start; gap: 0.6rem; margin-top: 0.75rem;
+  font-size: 14px; line-height: 1.5; cursor: pointer;
+}
+.consent input { width: 18px; height: 18px; margin: 0.15rem 0 0; flex: none; accent-color: var(--violet); }
+.consent a { color: inherit; }
+.signup-dark .consent input { accent-color: var(--bone); }
+.consent input[aria-invalid="true"] { outline: 2px solid var(--error); outline-offset: 2px; }
+.signup-dark .consent input[aria-invalid="true"] { outline-color: #FFC9C4; }
+
+/* ---------- Footer legal links ---------- */
+
+.footer-legal { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1rem; font-size: 14px; }
+.footer-legal a { color: var(--muted); }
+.link-button {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 0.18em;
+}
+
+/* ---------- Consent banner and settings ---------- */
+
+.consent-banner {
+  position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 50;
+  max-width: 40rem; margin: 0 auto; padding: 1rem 1.25rem;
+  background: var(--ground); color: var(--ink);
+  border: 1px solid rgba(42, 31, 92, 0.2); border-radius: var(--radius);
+  font-size: 14px;
+}
+.consent-banner p { margin: 0 0 0.75rem; }
+.consent-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.btn-quiet { background: transparent; color: var(--violet); border: 1px solid var(--edge); }
+.btn-quiet:hover { background: var(--band); }
+
+.consent-dialog {
+  width: min(32rem, calc(100vw - 2rem)); padding: 1.5rem;
+  border: 1px solid rgba(42, 31, 92, 0.2); border-radius: var(--radius);
+  background: var(--ground); color: var(--ink);
+}
+.consent-dialog::backdrop { background: rgba(27, 20, 61, 0.45); }
+.consent-dialog h2 { font-size: 28px; }
+.consent-dialog p { font-size: 14px; color: var(--muted); }
+.consent-row { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0; border-top: 1px solid rgba(42, 31, 92, 0.12); }
+.consent-row input { width: 18px; height: 18px; margin-top: 0.15rem; flex: none; accent-color: var(--violet); }
+.consent-row strong { display: block; font-weight: 500; }
+.consent-row-text { display: block; font-size: 14px; color: var(--muted); }
+.consent-dialog .consent-actions { margin-top: 1rem; }
+
+/* Third-party embeds stay as a placeholder until allowed (js/consent.js). */
+.embed { position: relative; aspect-ratio: 16 / 9; background: var(--band); border-radius: var(--radius); overflow: hidden; }
+.embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.embed-ask { position: absolute; inset: 0; display: grid; place-content: center; gap: 0.75rem; padding: 1.5rem; text-align: center; font-size: 14px; }
+
+/* ---------- Legal pages ---------- */
+
+.legal-page main { padding: clamp(2.5rem, 6vw, 4.5rem) 0 4rem; }
+.legal-page h1 { font-size: clamp(2.25rem, 5vw, 3.25rem); margin-bottom: 0.25em; }
+.legal-page h2 { font-size: 1.6rem; margin: 2.25rem 0 0.5rem; }
+.legal-page h3 { font-size: 1.15rem; margin: 1.5rem 0 0.4rem; }
+.legal-page p, .legal-page li { color: var(--ink); max-width: 44rem; }
+.legal-page ul { padding-left: 1.25rem; }
+.legal-page li { margin-bottom: 0.4rem; }
+.legal-meta { color: var(--muted); font-size: 14px; }
+.legal-summary { background: var(--band); padding: 1rem 1.25rem; border-radius: var(--radius); max-width: 44rem; }
+.legal-summary p:last-child, .legal-summary ul:last-child { margin-bottom: 0; }
+.legal-draft {
+  border: 1px dashed var(--edge); padding: 0.75rem 1rem; border-radius: var(--radius);
+  font-size: 14px; color: var(--muted); max-width: 44rem;
+}
+.legal-page table { border-collapse: collapse; font-size: 14px; max-width: 44rem; width: 100%; }
+.legal-page th, .legal-page td { text-align: left; padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid rgba(42, 31, 92, 0.12); vertical-align: top; }
+.legal-page th { font-weight: 500; }
+.ph { background: #FFF3C4; color: var(--ink); padding: 0 0.2em; border-radius: 2px; }

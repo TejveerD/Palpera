@@ -11,9 +11,9 @@
   <meta name="theme-color" content="#2A1F5C">
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Hanken+Grotesk:wght@400;500&display=swap">
+  <!-- Fonts are self-hosted (fonts/): no request to Google or any other
+       third party when the page loads. -->
+  <link rel="preload" href="fonts/bodoni-moda-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/site.css">
 
@@ -34,6 +34,7 @@
   <script src="js/carousel.js" defer></script>
   <script src="js/signup.js" defer></script>
   <script src="js/team.js" defer></script>
+  <script src="js/consent.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -63,6 +64,10 @@
                 <input id="email-hero" class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
                 <button class="btn btn-bone" type="submit">Notify me</button>
               </div>
+              <label class="consent">
+                <input type="checkbox" name="consent" value="yes" required>
+                <span data-consent-text>I agree to receive one email about Palpera's launch. I can withdraw at any time. See the <a href="privacy.html">privacy policy</a>.</span>
+              </label>
               <input class="gotcha" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
               <p class="small-print">One email when it is ready. Concept render; the product is in development.</p>
               <p class="signup-status" role="status" aria-live="polite"></p>
@@ -240,6 +245,10 @@
             <input id="email-closing" class="input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
             <button class="btn btn-bone" type="submit">Notify me</button>
           </div>
+          <label class="consent">
+            <input type="checkbox" name="consent" value="yes" required>
+            <span data-consent-text>I agree to receive one email about Palpera's launch. I can withdraw at any time. See the <a href="privacy.html">privacy policy</a>.</span>
+          </label>
           <input class="gotcha" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
           <p class="signup-status" role="status" aria-live="polite"></p>
         </form>
@@ -253,6 +262,13 @@
       <!-- TODO before launch: replace with TJ's contact address (brief, section 8.3). -->
       <p class="contact">[YOUR CONTACT EMAIL]</p>
     </div>
+    <nav class="wrap footer-legal" aria-label="Legal">
+      <a href="privacy.html">Privacy policy</a>
+      <a href="terms.html">Terms and conditions</a>
+      <a href="cookies.html">Cookie policy</a>
+      <a href="refunds.html">Refund policy</a>
+      <button class="link-button" type="button" data-consent-open>Cookie settings</button>
+    </nav>
   </footer>
 </body>
 </html>
