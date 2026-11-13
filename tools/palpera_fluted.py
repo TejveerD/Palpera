@@ -1,6 +1,8 @@
 # Palpera design experiments: alternative frames and pods for three looks.
 #   EXP=fluted | thermal | ascii     which concept to build
 #   EXP_OUT=<folder>  EXP_RES=1440x810  EXP_SAMPLES=32
+#   EXP_FRAME=green | brown | smoke | clear   frame colour (fl_site)
+#   EXP_ROD_SINK=3.0  how far the glass rods go below the floor (0 = old look)
 #   EXP_DEVICE=GPU (default; OptiX, then CUDA, else CPU) | CPU
 #   EXP_SEQ=299 renders the camera move as seq/frame_0001.png ...
 #   EXP_FRAMES=1-30,136-165 renders only those frames of the EXP_SEQ move
@@ -213,6 +215,16 @@ for c in list(bpy.data.collections):
     bpy.data.collections.remove(c)
 scene = bpy.context.scene
 
+# Frame colours to pair with the pods (EXP_FRAME, fl_site only). Suggested
+# pairs, pending TJ: white on green, sand on brown, graphite on smoke, silver on clear.
+FRAMES = {
+    "green": dict(colour="2F5D50", rough=0.08, coat=0.5, trans=0.75, ior=1.49),
+    "brown": dict(colour="5A3A28", rough=0.08, coat=0.5, trans=0.6, ior=1.49),
+    "smoke": dict(colour="4A4D52", rough=0.08, coat=0.5, trans=0.7, ior=1.49),
+    "clear": dict(colour="E3EAF0", rough=0.05, coat=0.6, trans=0.92, ior=1.49),
+}
+_fr = FRAMES[os.environ.get("EXP_FRAME", "green")]
+
 CFG = {
     "fluted": dict(shape=4.2, a=2.55, b=1.95, w=0.44, d=0.42, lens_x=3.05,
                    frame=mat("Frame", rgba("2F5D50"), rough=0.08, coat=0.5, trans=0.75, ior=1.49),
@@ -244,7 +256,8 @@ CFG = {
     # ---- chosen direction: the first fluted design, a little more frame in
     # view, with a glass pod, and a camera move into a close-up of the pod
     "fl_site": dict(base="fluted", shape=4.2, a=2.55, b=1.95, w=0.44, d=0.42, lens_x=3.05,
-                    frame=mat("Frame", rgba("2F5D50"), rough=0.08, coat=0.5, trans=0.75, ior=1.49),
+                    frame=mat("Frame", rgba(_fr["colour"]), rough=_fr["rough"], coat=_fr["coat"],
+                              trans=_fr["trans"], ior=_fr["ior"]),
                     pod_col=os.environ.get("EXP_POD", "E6F1EB"), world="B9CBC3", floor="F4F4F0",
                     pod_glass=os.environ.get("EXP_POD_GLASS", "1") == "1", core_col="2F5D50",
                     rods=dict(spans=[(-10.5, 2.3)], radius=0.28, step=0.56, tint="E9F2EE"),
@@ -374,13 +387,14 @@ if RODS:
     # positions across the view; a gap between spans leaves a clear window.
     M_GLASS = mat("Fluted", rgba(RODS["tint"]), rough=0.02, trans=1.0, ior=1.5)
     height = 14.0
+    sink = float(os.environ.get("EXP_ROD_SINK", "3.0"))   # base below the floor: no dark ring
     k = 0
     for s0, s1 in RODS["spans"]:
         s_ = s0
         while s_ <= s1:
             p = u * s_ - d * 7.0
-            cyl("Rod%d" % k, RODS["radius"], height, C_FL, M_GLASS,
-                (p.x, p.y, FLOOR_Z + height / 2), seg=40)
+            cyl("Rod%d" % k, RODS["radius"], height + sink, C_FL, M_GLASS,
+                (p.x, p.y, FLOOR_Z - sink + (height + sink) / 2), seg=40)
             s_ += RODS["step"]
             k += 1
 for i, (s_, colour, strength) in enumerate(CFG.get("backlights", [])):
@@ -400,7 +414,7 @@ def use_gpu():
     want = os.environ.get("EXP_DEVICE", "GPU").upper()
     if want != "GPU":
         scene.cycles.device = "CPU"
-        print("EXP device CPU (asked for)")
+        print("EXP device CPU (asked for)", flush=True)
         return
     prefs = bpy.context.preferences.addons["cycles"].preferences
     for kind in ("OPTIX", "CUDA"):
@@ -414,10 +428,10 @@ def use_gpu():
             for d in prefs.devices:
                 d.use = d.type == kind
             scene.cycles.device = "GPU"
-            print("EXP device", kind, [d.name for d in gpus])
+            print("EXP device", kind, [d.name for d in gpus], flush=True)
             return
     scene.cycles.device = "CPU"
-    print("EXP WARNING: no OptiX/CUDA GPU found, rendering on CPU")
+    print("EXP WARNING: no OptiX/CUDA GPU found, rendering on CPU", flush=True)
 
 
 use_gpu()
@@ -436,7 +450,7 @@ os.makedirs(OUT, exist_ok=True)
 def render(name):
     r.filepath = os.path.join(OUT, name + ".png")
     bpy.ops.render.render(write_still=True)
-    print("EXP wrote", r.filepath)
+    print("EXP wrote", r.filepath, flush=True)
 
 
 def pose(t):
@@ -471,7 +485,7 @@ if KEYS:
             c_ = world_to_camera_view(scene, cam, root.matrix_world @ Vector(v_))
             out[k_] = [round(c_.x, 4), round(1 - c_.y, 4)]
         json.dump(out, open(os.path.join(OUT, "anchors.json"), "w"), indent=1)
-        print("EXP anchors", out)
+        print("EXP anchors", out, flush=True)
 elif SEQ_N:
     import time
     want = set()
@@ -489,7 +503,7 @@ elif SEQ_N:
         t1 = time.time()
         pose((n - 1) / (SEQ_N - 1))
         render("seq/frame_%04d" % n)
-        print("EXP frame %d (%d/%d) %.1fs, total %.0fs" % (n, k + 1, len(todo), time.time() - t1, time.time() - t0))
+        print("EXP frame %d (%d/%d) %.1fs, total %.0fs" % (n, k + 1, len(todo), time.time() - t1, time.time() - t0), flush=True)
 else:
     render("beauty")
 
