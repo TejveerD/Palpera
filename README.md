@@ -17,13 +17,13 @@ assets/sequence/      frame_0001.webp ... frame_0150.webp
 assets/colours/       violet / red / graphite / silver / sand .webp
 tools/palpera_pod.py        Blender scene script
 concept-renders/            full-size renders from palpera_pod.py (not used by the page)
-concept-renders/website/    PNG sources of the page's sequence and colour stills
+concept-renders/website-299/  WebP sources of the current 299-frame sequence and colour stills
 tools/frames_to_webp.py     PNG renders -> WebP assets
 ```
 
 ## Before launch: do not ship until all of these are done
 
-1. **Real renders.** Done: `assets/` holds the WebP versions of the `sequence` and `colours` renders from `palpera_pod.py` (sources in `concept-renders/website/`).
+1. **Real renders.** Done: `assets/` holds the WebP versions of the `sequence` and `colours` renders from `palpera_pod.py` (sources in `concept-renders/website-299/`; the older 150-frame PNGs are in `concept-renders/website/`).
 2. **Formspree endpoint.** Done: `https://formspree.io/f/xnpdjprv`, set in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`.
 3. **Contact email.** Replace `[YOUR CONTACT EMAIL]` in the footer of `index.html`, ideally as a `mailto:` link.
 
