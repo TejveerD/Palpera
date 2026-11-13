@@ -49,6 +49,8 @@ The frames carry their own lavender studio backdrop. On load, `sequence.js` samp
 
 - **Desktop (900 px or wider, no reduced-motion setting):** the hero text sits over a full-screen canvas. Scrolling plays the 150 frames: the stack merges, the glasses come in, the pod clips on and the camera settles. The page then holds on the last frame while the colour carousel takes over the same stage. The scroll length is `--seq-length` in `css/site.css` (420vh); tune it by feel. Frame 1 loads immediately. The rest load after the page has finished loading, coarse to fine, so early scrolling already shows motion.
 - **Phones and reduced motion:** a static hero still, then the carousel. No frame file is ever requested.
+- **Window size and resizing:** the whole width of every frame is always shown. In a window taller than 16:9 the backdrop colours fill the space above and below, with a soft fade at the frame edges. Resizing across 900 px switches between the scroll and static versions without a reload and keeps your place on the page.
+- **Handover to the carousel:** the violet pod stays on the canvas (the last frame); the other four colours fade in over it, so there is no image swap at the handover.
 - **Carousel:** arrow buttons, colour dots, Left/Right/Home/End keys while it has focus, swipe, and two-finger trackpad swipe. Changes are announced through a polite live region. Scrolling back into the sequence resets it to violet. A keyboard user who tabs into it is taken to the end of the sequence.
 
 ## Local preview

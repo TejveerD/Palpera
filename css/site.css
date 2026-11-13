@@ -217,7 +217,7 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
   pointer-events: none;
 }
 .seq .hero-inner { width: 100%; grid-template-columns: minmax(0, 1fr); }
-.seq .hero-copy { max-width: 27rem; pointer-events: auto; }
+.seq .hero-copy { max-width: min(27rem, 42vw); pointer-events: auto; }
 .seq .hero-figure { display: none; }
 
 .seq .sequence { height: var(--seq-length); padding: 0; }
@@ -228,7 +228,8 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 .seq .stage {
   position: sticky; top: 0; height: 100vh; min-height: 36rem; max-width: none;
   padding: 0; overflow: hidden;
-  background: linear-gradient(var(--stage-top), var(--stage-bottom));
+  /* Above and below the frame in tall windows: the frame's edge colours. */
+  background: linear-gradient(var(--stage-top) 50%, var(--stage-bottom) 50%);
 }
 /* Soft blend from the frame's floor into the band below, so the stage has
    no hard bottom edge when it unpins. Sits over canvas and carousel alike,
@@ -250,6 +251,27 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 .seq .carousel { position: absolute; inset: 0; border-radius: 0; }
 .seq .carousel:focus-visible { outline-offset: -6px; }
 .seq .carousel-view { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: transparent; }
+/* Same geometry as the canvas in sequence.js: full width, centred
+   vertically; the stage gradient shows above and below in tall windows. */
+.seq .carousel-img { top: var(--img-top, 0); bottom: auto; height: var(--img-h, 100%); object-fit: fill; }
+/* The same edge fades the canvas paints in windows taller than 16:9. */
+.seq .carousel-view::before, .seq .carousel-view::after {
+  content: ""; position: absolute; left: 0; right: 0; height: var(--fade-h, 0);
+  opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+}
+.seq .carousel-view::before { top: var(--img-top, 0); background: linear-gradient(var(--stage-top), transparent); }
+.seq .carousel-view::after {
+  top: calc(var(--img-top, 0px) + var(--img-h, 0px) - var(--fade-h, 0px));
+  background: linear-gradient(transparent, var(--stage-bottom));
+}
+/* Violet is the last sequence frame, already on the canvas underneath, so
+   its <img> stays hidden and the handover involves no image swap at all.
+   The other colours fade in over the canvas; their edge fades appear with
+   them (the canvas has its own under violet). */
+.seq .sequence .carousel-img[data-colour="violet"] { visibility: hidden; }
+.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::before,
+.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::after { opacity: var(--fade-on, 0); }
+@media (prefers-reduced-motion: reduce) { .seq .carousel-view::before, .seq .carousel-view::after { transition: none; } }
 /* Until the last frame is reached, the canvas is what the visitor sees. */
 .seq .carousel-img { visibility: hidden; }
 .seq .sequence.at-end .carousel-img { visibility: visible; }
