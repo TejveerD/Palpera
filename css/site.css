@@ -217,7 +217,7 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
   pointer-events: none;
 }
 .seq .hero-inner { width: 100%; grid-template-columns: minmax(0, 1fr); }
-.seq .hero-copy { max-width: 31rem; pointer-events: auto; }
+.seq .hero-copy { max-width: 27rem; pointer-events: auto; }
 .seq .hero-figure { display: none; }
 
 .seq .sequence { height: var(--seq-length); padding: 0; }

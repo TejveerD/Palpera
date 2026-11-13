@@ -565,9 +565,11 @@ def build_web_sequence():
     for f in (1, 34):
         key(cam, "location", f, LINEUP_CAM_POS)
         key(target, "location", f, LINEUP_CAM_TARGET)
-        key(cam.data, "lens", f, 42)
-        # the stack starts right of centre, leaving room for the headline
-        key(cam.data, "shift_x", f, -0.18)
+        key(cam.data, "lens", f, 35)
+        # the stack starts right of centre, leaving room for the headline:
+        # it spans about 47% to 94% of the frame width, clear of the hero
+        # text on a 16:10 laptop screen (was lens 42, shift -0.18)
+        key(cam.data, "shift_x", f, -0.22)
         key(cam.data, "shift_y", f, 0.04)
     key(target, "location", 70, ready_pos)       # follow the pod as it lifts
     key(cam.data, "shift_x", 72, 0.0)
