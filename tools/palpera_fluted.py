@@ -1,6 +1,11 @@
 # Palpera design experiments: alternative frames and pods for three looks.
 #   EXP=fluted | thermal | ascii     which concept to build
 #   EXP_OUT=<folder>  EXP_RES=1440x810  EXP_SAMPLES=32
+#   EXP_DEVICE=GPU (default; OptiX, then CUDA, else CPU) | CPU
+#   EXP_SEQ=299 renders the camera move as seq/frame_0001.png ...
+#   EXP_FRAMES=1-30,136-165 renders only those frames of the EXP_SEQ move
+#   (same spacing as the full run). Frames already on disk are skipped
+#   unless EXP_OVERWRITE=1, so an interrupted run can be restarted.
 # Writes beauty.png, and for thermal/ascii also clay.png and podmask.png.
 import bpy, bmesh, math, os
 from mathutils import Vector, Matrix
@@ -389,7 +394,33 @@ r = scene.render
 r.engine = "CYCLES"
 scene.cycles.use_denoising = True
 scene.cycles.samples = SAMPLES
-scene.cycles.device = "CPU"
+
+
+def use_gpu():
+    want = os.environ.get("EXP_DEVICE", "GPU").upper()
+    if want != "GPU":
+        scene.cycles.device = "CPU"
+        print("EXP device CPU (asked for)")
+        return
+    prefs = bpy.context.preferences.addons["cycles"].preferences
+    for kind in ("OPTIX", "CUDA"):
+        try:
+            prefs.compute_device_type = kind
+        except TypeError:
+            continue
+        prefs.get_devices()
+        gpus = [d for d in prefs.devices if d.type == kind]
+        if gpus:
+            for d in prefs.devices:
+                d.use = d.type == kind
+            scene.cycles.device = "GPU"
+            print("EXP device", kind, [d.name for d in gpus])
+            return
+    scene.cycles.device = "CPU"
+    print("EXP WARNING: no OptiX/CUDA GPU found, rendering on CPU")
+
+
+use_gpu()
 r.resolution_x, r.resolution_y = RES
 r.resolution_percentage = 100
 r.image_settings.file_format = "PNG"
@@ -442,9 +473,23 @@ if KEYS:
         json.dump(out, open(os.path.join(OUT, "anchors.json"), "w"), indent=1)
         print("EXP anchors", out)
 elif SEQ_N:
-    for i in range(SEQ_N):
-        pose(i / (SEQ_N - 1))
-        render("seq/frame_%04d" % (i + 1))
+    import time
+    want = set()
+    for part in os.environ.get("EXP_FRAMES", "").split(","):
+        if part.strip():
+            a_, _, b_ = part.strip().partition("-")
+            want.update(range(int(a_), int(b_ or a_) + 1))
+    todo = [n for n in range(1, SEQ_N + 1) if not want or n in want]
+    r.image_settings.color_mode = "RGB"   # opaque scene: no alpha needed
+    overwrite = os.environ.get("EXP_OVERWRITE", "0") == "1"
+    t0 = time.time()
+    for k, n in enumerate(todo):
+        if not overwrite and os.path.exists(os.path.join(OUT, "seq", "frame_%04d.png" % n)):
+            continue
+        t1 = time.time()
+        pose((n - 1) / (SEQ_N - 1))
+        render("seq/frame_%04d" % n)
+        print("EXP frame %d (%d/%d) %.1fs, total %.0fs" % (n, k + 1, len(todo), time.time() - t1, time.time() - t0))
 else:
     render("beauty")
 
