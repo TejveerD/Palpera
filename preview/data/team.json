@@ -1,0 +1,4 @@
+{
+  "_help": "People shown in the \"Who we are\" section, in this order. Each entry: name, role, and one line. While this list is empty the section and its link in the top bar are not shown. Never fill it with placeholder people.",
+  "people": []
+}

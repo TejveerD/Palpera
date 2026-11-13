@@ -3,8 +3,8 @@
  *
  * Data: data/specs.json (headings and values, edited by TJ) and
  * data/anchors.json (where each anchor lands in the last sequence frame,
- * written by tools/palpera_pod.py; replace it whenever the frames are
- * re-rendered). An empty value shows as "Coming soon".
+ * written by tools/palpera_fluted.py and converted by tools/fluted_to_site.py;
+ * replace it whenever the frames are re-rendered). An empty value shows as "Coming soon".
  *
  * Desktop: pointer callouts over the held last frame. sequence.js owns the
  * scroll and calls:
@@ -35,20 +35,24 @@
 
   var SVGNS = 'http://www.w3.org/2000/svg';
 
-  // Where each label goes, as fractions of the frame (like anchors.json):
-  // the elbow where the diagonal meets the horizontal run, the run's length,
-  // and its direction (1 = right, -1 = left). Chosen for clear space on the
-  // three-quarter frame: above the glasses, or below and right of the pod.
+  // How each line leaves its anchor (fluted spec, section 4.4), with its
+  // end as a fraction of the frame (like anchors.json):
+  //   up    straight up; the label sits on the end, clear of the header
+  //   down  straight down; the label hangs below the end
+  //   diag  down and to the left, ending in the clear part of the lens;
+  //         the label hangs below the end
+  // Battery life ends higher than water resistance, so their labels clear.
   var PLACE = {
-    sensor:    { elbow: [0.585, 0.70], run: 0.15, dir: 1 },
-    clip:      { elbow: [0.585, 0.19], run: 0.14, dir: -1 },
-    pod_top:   { elbow: [0.765, 0.22], run: 0.14, dir: 1 },
-    pod_rear:  { elbow: [0.810, 0.70], run: 0.13, dir: 1 },
-    pod_front: { elbow: [0.680, 0.60], run: 0.12, dir: 1 }
+    sensor:   { dir: 'diag', end: [0.112, 0.80] },
+    clip:     { dir: 'up',   end: 0.10 },
+    pod_top:  { dir: 'up',   end: 0.06 },
+    ribs:     { dir: 'down', end: 0.62 },
+    pod_rear: { dir: 'down', end: 0.47 }
   };
   var MARGIN = 24;      // px kept clear at the window edges
-  var GAP = 8;          // px between the run and the label above it
-  var RING_R = 6;
+  var GAP = 8;          // px between a line's end and its label
+  var MIN_LINE = 28;    // shortest line, px
+  var RING_R = 8;
 
   var items = [];       // { el, inner, ring, line, len, last: {} }
   var ready = false;
@@ -76,9 +80,8 @@
     });
 
     callouts.forEach(function (c) {
-      c.dir = PLACE[c.anchor].dir;
       var t = text(c);
-      var wrap = el('div', 'co-label' + (c.dir < 0 ? ' is-left' : ''));
+      var wrap = el('div', 'co-label');
       var inner = el('div', 'co-label-inner');
       var detail = (c.detail || '').trim();
       // With a detail paragraph the label is a button that opens it (hover,
@@ -194,30 +197,46 @@
     svg.setAttribute('height', VH);
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + VH);
 
+    // Up labels stay below the header (the name at the top centre and the
+    // links) wherever they would sit under it.
+    var header = window.palperaHero ? window.palperaHero.headerBoxes() : [];
+    function topClear(x0, x1) {
+      var y = MARGIN;
+      header.forEach(function (b) {
+        if (b && x1 > b.left - 16 && x0 < b.left + b.w + 16) y = Math.max(y, b.top + b.h + 16);
+      });
+      return y;
+    }
+
     items.forEach(function (it) {
       var ax = it.a.x * W, ay = top + it.a.y * H;
-      var ex = it.p.elbow[0] * W, ey = top + it.p.elbow[1] * H;
       var lw = it.el.offsetWidth + (it.face ? 24 : 0), lh = it.el.offsetHeight;   // + the open icon
-      var run = Math.max(it.p.run * W, lw + 4);
+      var ex = ax, ey, lx, ly;
 
-      // Keep the label inside the window with a margin.
-      ey = Math.max(ey, MARGIN + lh + GAP);
-      ey = Math.min(ey, VH - MARGIN);
-      if (it.p.dir > 0) ex = Math.min(ex, W - MARGIN - run);
-      else ex = Math.max(ex, MARGIN + run);
-      var rx = ex + it.p.dir * run;
+      if (it.p.dir === 'up') {
+        ey = Math.max(top + it.p.end * H, topClear(ax, ax + lw) + lh + GAP);
+        ey = Math.min(ey, ay - MIN_LINE);
+        lx = ax; ly = ey - GAP - lh;
+      } else if (it.p.dir === 'down') {
+        ey = Math.min(top + it.p.end * H, VH - MARGIN - lh - GAP);
+        ey = Math.max(ey, ay + MIN_LINE);
+        lx = ax; ly = ey + GAP;
+      } else {
+        ex = it.p.end[0] * W;
+        ey = Math.min(top + it.p.end[1] * H, VH - MARGIN - lh - GAP);
+        lx = ex - lw / 2; ly = ey + GAP;
+      }
+      lx = Math.max(MARGIN, Math.min(lx, W - MARGIN - lw));
 
       it.line.setAttribute('d', 'M' + ax.toFixed(1) + ' ' + ay.toFixed(1) +
-                                ' L' + ex.toFixed(1) + ' ' + ey.toFixed(1) +
-                                ' L' + rx.toFixed(1) + ' ' + ey.toFixed(1));
-      it.len = Math.hypot(ex - ax, ey - ay) + run;
+                                ' L' + ex.toFixed(1) + ' ' + ey.toFixed(1));
+      it.len = Math.hypot(ex - ax, ey - ay);
       it.line.style.strokeDasharray = it.len.toFixed(1);
       it.ringPos.style.transform = 'translate(' + (ax - RING_R).toFixed(1) + 'px,' + (ay - RING_R).toFixed(1) + 'px)';
       it.anchorAt = { x: ax, y: ay };   // for the placement check
 
-      var lx = it.p.dir > 0 ? ex : rx;
-      it.el.style.transform = 'translate(' + Math.round(lx) + 'px,' + Math.round(ey - GAP - lh) + 'px)';
-      it.box = { x: lx, y: ey - GAP - lh, w: lw, h: lh };   // for the overlap check
+      it.el.style.transform = 'translate(' + Math.round(lx) + 'px,' + Math.round(ly) + 'px)';
+      it.box = { name: it.data.anchor, x: lx, y: ly, w: lw, h: lh };   // for the overlap check
       it.last = {};
     });
     lastT = lastO = -1;
@@ -249,11 +268,6 @@
     setLive(t >= 1 && opacity >= 0.98);
 
     var n = items.length;
-    var h = ease(t * n / 0.3);
-    if (heading) {
-      heading.style.opacity = h;
-      heading.style.transform = 'translateY(' + ((1 - h) * 6).toFixed(2) + 'px)';
-    }
     items.forEach(function (it, i) {
       var u = t * n - i;                          // 0..1 for this callout
       // ring, line, label overlap closely; each callout is in by 70% of its
@@ -280,7 +294,7 @@
   }
 
   window.palperaCallouts = {
-    count: function () { return ready ? items.length : 4; },
+    count: function () { return ready ? items.length : 5; },
     layout: layout,
     update: update,
     boxes: function () { return items.map(function (it) { return it.box; }); },
@@ -296,7 +310,7 @@
     });
   }
 
-  // Shared data files: the preview reads them from the site root (data-base="../").
+  // Data files, relative to the page (the preview has its own copies).
   var BASE = document.documentElement.getAttribute('data-base') || '';
   Promise.all([json(BASE + 'data/specs.json'), json(BASE + 'data/anchors.json')]).then(function (res) {
     build(res[0], res[1].anchors || {});
