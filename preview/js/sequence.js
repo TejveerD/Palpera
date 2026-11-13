@@ -313,11 +313,12 @@
       section.style.setProperty('--img-h', dh / dpr + 'px');
       section.style.setProperty('--fade-h', fade / dpr + 'px');
       section.style.setProperty('--fade-on', dy > 0 ? '1' : '0');
-      if (window.palperaCallouts) {
-        window.palperaCallouts.layout(cssW, dy / dpr, dh / dpr, cssH);
-      }
+      // The hero first: the callouts keep clear of the header it measures.
       if (window.palperaHero) {
         window.palperaHero.layout(cssW, dy / dpr, dh / dpr, cssH);
+      }
+      if (window.palperaCallouts) {
+        window.palperaCallouts.layout(cssW, dy / dpr, dh / dpr, cssH);
       }
     }
   }

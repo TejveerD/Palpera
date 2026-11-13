@@ -3,6 +3,7 @@
 #   EXP_OUT=<folder>  EXP_RES=1440x810  EXP_SAMPLES=32
 #   EXP_FRAME=green | brown | smoke | clear   frame colour (fl_site)
 #   EXP_ROD_SINK=3.0  how far the glass rods go below the floor (0 = old look)
+#   EXP_FORMAT=PNG | JPEG (EXP_JPEG_Q=98)   file type of the renders
 #   EXP_DEVICE=GPU (default; OptiX, then CUDA, else CPU) | CPU
 #   EXP_SEQ=299 renders the camera move as seq/frame_0001.png ...
 #   EXP_FRAMES=1-30,136-165 renders only those frames of the EXP_SEQ move
@@ -447,8 +448,16 @@ except Exception:
 os.makedirs(OUT, exist_ok=True)
 
 
+FMT = os.environ.get("EXP_FORMAT", "PNG").upper()     # PNG, or JPEG for smaller uploads
+EXT = ".jpg" if FMT == "JPEG" else ".png"
+if FMT == "JPEG":
+    r.image_settings.file_format = "JPEG"
+    r.image_settings.color_mode = "RGB"
+    r.image_settings.quality = int(os.environ.get("EXP_JPEG_Q", "98"))
+
+
 def render(name):
-    r.filepath = os.path.join(OUT, name + ".png")
+    r.filepath = os.path.join(OUT, name + EXT)
     bpy.ops.render.render(write_still=True)
     print("EXP wrote", r.filepath, flush=True)
 
@@ -498,7 +507,7 @@ elif SEQ_N:
     overwrite = os.environ.get("EXP_OVERWRITE", "0") == "1"
     t0 = time.time()
     for k, n in enumerate(todo):
-        if not overwrite and os.path.exists(os.path.join(OUT, "seq", "frame_%04d.png" % n)):
+        if not overwrite and os.path.exists(os.path.join(OUT, "seq", "frame_%04d%s" % (n, EXT))):
             continue
         t1 = time.time()
         pose((n - 1) / (SEQ_N - 1))
