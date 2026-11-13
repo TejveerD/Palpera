@@ -36,7 +36,7 @@
   // 60 Hz frame. Lower is smoother but lags more.
   var EASE = 0.16;
   var MAX_PARALLEL = 6;
-  var BG = '#F9F8FC';
+  var BG = '#CFC9E0';             // replaced by the sampled frame edge colour
 
   var frames = new Array(COUNT);   // HTMLImageElement once decoded
   var loadedCount = 0;
@@ -48,6 +48,7 @@
   var rafId = 0;
   var lastTime = 0;
   var atEnd = false;
+  var keyboardJump = false;
 
   function url(i) {
     var n = String(i + 1);
@@ -177,7 +178,10 @@
     if (img && img !== drawnImg) draw(img);
 
     // Hand over only when the real last frame is actually on the canvas.
-    setAtEnd(index === COUNT - 1 && img === frames[COUNT - 1]);
+    // (or when a keyboard visitor jumped here: the violet carousel still is
+    // the same picture, so it can stand in until the frame arrives).
+    setAtEnd(index === COUNT - 1 && (img === frames[COUNT - 1] || keyboardJump));
+    if (index !== COUNT - 1) keyboardJump = false;
 
     if (shown !== target) {
       requestTick();
@@ -221,8 +225,32 @@
   // Frame 1 is the hero stack, so the canvas is never blank for long. Load it
   // (and the frame for the current scroll position) straight away; the rest
   // waits until the page has painted and finished its own loading.
+  // Sample the studio backdrop from frame 1's top and bottom edges, so the
+  // canvas fill and the stage behind it match the renders exactly.
+  function sampleBackdrop(img) {
+    try {
+      var w = 64, h = 36;
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.drawImage(img, 0, 0, w, h);
+      var avg = function (y) {
+        var d = x.getImageData(0, y, w, 1).data, r = 0, g = 0, b = 0;
+        for (var i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+        var n = d.length / 4;
+        return 'rgb(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(b / n) + ')';
+      };
+      var top = avg(0), bottom = avg(h - 1);
+      section.style.setProperty('--stage-top', top);
+      section.style.setProperty('--stage-bottom', bottom);
+      BG = top;
+      drawnImg = null;
+    } catch (e) { /* keep the fallback colours */ }
+  }
+
   loadFrame(0).then(function (ok) {
     if (!ok) return fallBackToStatic();
+    sampleBackdrop(frames[0]);
     var here = Math.round(target);
     if (here > 0) loadFrame(here);
     requestTick();
@@ -257,11 +285,9 @@
     // Hand over now, not on the next animation frame, so the carousel
     // buttons are focusable before the visitor presses Tab again.
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-    if (frames[COUNT - 1]) {
-      tick(performance.now());
-    } else {
-      loadFrame(COUNT - 1).then(function () { requestTick(); });
-    }
+    keyboardJump = true;
+    tick(performance.now());
+    if (!frames[COUNT - 1]) loadFrame(COUNT - 1);
   });
 
   // Debug handle for checking load progress in the console.

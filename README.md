@@ -11,14 +11,13 @@ js/signup.js          Formspree signup (FORMSPREE_ENDPOINT lives here)
 assets/hero/          stack.webp: hero stack still (phones, reduced motion)
 assets/sequence/      frame_0001.webp ... frame_0150.webp
 assets/colours/       violet / red / graphite / silver / sand .webp
-tools/palpera_sequence.py   Blender: `sequence` and `colours` shots
+tools/palpera_pod.py        Blender scene script (TJ's; must be added)
 tools/frames_to_webp.py     PNG renders -> WebP assets
-tools/standin_scene.py      crude stand-in scene, for testing only
 ```
 
 ## Before launch: do not ship until all of these are done
 
-1. **Real renders.** The images in `assets/` are stand-in renders from `tools/standin_scene.py`. Each one is stamped "STAND-IN, NOT A CONCEPT RENDER". Re-render with `palpera_pod.py` (see below) and convert them without `--watermark`.
+1. **Real renders.** The images in `assets/` are stand-ins, each stamped "STAND-IN, NOT A CONCEPT RENDER". Replace them with renders from `tools/palpera_pod.py` (see below).
 2. **Formspree endpoint.** Put the form URL in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`. Until then the form says "Signup is not connected yet."
 3. **Contact email.** Replace `[YOUR CONTACT EMAIL]` in the footer of `index.html`, ideally as a `mailto:` link.
 
@@ -26,36 +25,23 @@ Formspree's free plan (checked November 2026): 50 submissions a month, and submi
 
 ## Rendering the sequence and colour stills
 
-`palpera_sequence.py` adds two shots on top of the scene that `palpera_pod.py` builds. Put both files in `tools/`. Then add one call to `palpera_pod.py` after the scene is built, with the violet pod on the temple in its Cam_Hero pose:
+`tools/palpera_pod.py` builds the scene and contains both website shots (`sequence`, 150 frames, and `colours`, five stills taken from the last sequence frame with the pod colour swapped). It must be in `tools/` before any rendering.
 
-```python
-import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import palpera_sequence
-palpera_sequence.run(["colours", "sequence"], out_dir)
-```
-
-The object names `palpera_sequence.py` expects are listed in `CONFIG` at the top of that file: `Cam_Hero`, `Pod_Violet`, `Pod_Red`, `Pod_Graphite`, `Pod_Silver`, `Pod_Sand`, `Glasses`, and optionally `Pod_Attach`. They are guesses. If one is wrong, the script stops and prints every object name in the scene, so you can fix `CONFIG`. Also check the pod axis settings (`pod_length_axis` and the others) against the first frame.
-
-Run it headless (Windows):
+Windows:
 
 ```
 set PALPERA_OUT=C:\palpera\renders
 set PALPERA_QUALITY=final
+set PALPERA_SHOTS=sequence,colours
 "C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P tools\palpera_pod.py
-```
-
-For a quick check of the motion, add `set PALPERA_SEQ_SCALE=25` to render at a quarter size.
-
-Then convert:
-
-```
 python tools\frames_to_webp.py C:\palpera\renders
 ```
 
-This writes `assets/sequence/`, `assets/hero/stack.webp` and `assets/colours/`. The violet carousel still is copied from the last sequence frame, so the handover from the sequence to the carousel is identical by construction. The script also compares that frame with the separately rendered violet still and warns if they differ, which would mean the other four colour stills do not match either. It prints the total size; the budget is under 10 MB for the sequence.
+Use `PALPERA_QUALITY=preview` first for a fast low-resolution check of the motion. Never pass `--watermark` for these renders.
 
-If the frame count changes, update `data-frames` on the `.sequence` section in `index.html`.
+`frames_to_webp.py` writes `assets/sequence/`, `assets/hero/stack.webp` and `assets/colours/`. It reports how far `colours/violet.png` differs from the last sequence frame (it should be about zero) and prints the total size; the budget is under 10 MB for the sequence. If the frame count changes, update `data-frames` on the `.sequence` section in `index.html`.
+
+The frames carry their own lavender studio backdrop. On load, `sequence.js` samples the top and bottom edge colours of frame 1 and paints the stage with them, and the bottom of the stage fades into the band below. In the hero, muted text and the accent are darkened (`#4A4462`, `#4A31A6`) so they stay above 4.5:1 on the backdrop.
 
 ## How the page behaves
 

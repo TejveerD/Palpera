@@ -4,7 +4,8 @@ Convert Blender PNG renders into the WebP files the page loads.
     python tools/frames_to_webp.py RENDERS_DIR [--site .] [--width 1600]
                                    [--quality 82] [--watermark]
 
-RENDERS_DIR is PALPERA_OUT from the Blender run, containing:
+RENDERS_DIR is PALPERA_OUT from a palpera_pod.py run with
+PALPERA_SHOTS=sequence,colours, containing:
     sequence/frame_0001.png ...      -> assets/sequence/frame_0001.webp ...
     sequence/hero_stack.png          -> assets/hero/stack.webp
     colours/<colour>.png             -> assets/colours/<colour>.webp
@@ -17,8 +18,8 @@ were rendered with the same camera and lighting.
 
 Transparent renders are flattened onto the page ground (#F9F8FC).
 
---watermark stamps "STAND-IN" across every image (for stand-in renders that
-must never be mistaken for concept renders).
+--watermark stamps "STAND-IN" across every image. Never use it for renders
+from palpera_pod.py.
 
 Needs Pillow (pip install pillow). Prints the total size at the end; the
 brief's budget is under 10 MB for the sequence.

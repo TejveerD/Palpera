@@ -221,10 +221,30 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 .seq .hero-figure { display: none; }
 
 .seq .sequence { height: var(--seq-length); padding: 0; }
+/* The frames carry their own lavender studio backdrop (about #CFC9E0,
+   lighter toward the floor). sequence.js samples the real edge colours from
+   frame 1 into --stage-top / --stage-bottom; these are the fallbacks. */
+.seq .sequence { --stage-top: #CFC9E0; --stage-bottom: #DCD7EA; }
 .seq .stage {
   position: sticky; top: 0; height: 100vh; min-height: 36rem; max-width: none;
-  padding: 0; overflow: hidden; background: var(--ground);
+  padding: 0; overflow: hidden;
+  background: linear-gradient(var(--stage-top), var(--stage-bottom));
 }
+/* Soft blend from the frame's floor into the band below, so the stage has
+   no hard bottom edge when it unpins. Sits over canvas and carousel alike,
+   so the handover between them is unaffected. */
+.seq .stage::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22vh;
+  background: linear-gradient(rgba(240, 237, 248, 0), var(--band));
+  pointer-events: none; z-index: 1;
+}
+.seq .carousel-controls, .seq .stage-label { z-index: 2; }
+
+/* Hero text over the lavender frames: darker muted and accent, so they stay
+   above 4.5:1 on the backdrop (#CFC9E0: muted 4.65, accent 4.50 before). */
+.seq .hero { --muted: #4A4462; --accent: #4A31A6; --input-border: #575170; }
+.seq .hero .btn { background: var(--accent); }
+.seq .site-header { --accent: #4A31A6; }
 .seq .stage-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .seq .carousel { position: absolute; inset: 0; border-radius: 0; }
