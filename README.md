@@ -20,7 +20,7 @@ tools/frames_to_webp.py     PNG renders -> WebP assets
 ## Before launch: do not ship until all of these are done
 
 1. **Real renders.** Done: `assets/` holds the WebP versions of the `sequence` and `colours` renders from `palpera_pod.py` (sources in `concept-renders/website/`).
-2. **Formspree endpoint.** Put the form URL in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`. Until then the form says "Signup is not connected yet."
+2. **Formspree endpoint.** Done: `https://formspree.io/f/xnpdjprv`, set in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`.
 3. **Contact email.** Replace `[YOUR CONTACT EMAIL]` in the footer of `index.html`, ideally as a `mailto:` link.
 
 Formspree's free plan (checked November 2026): 50 submissions a month, and submission history is kept for **30 days only**. Export the list from the Formspree dashboard regularly so no address is lost. Before the launch email, move the list into a mailing-list tool.

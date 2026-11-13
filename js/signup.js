@@ -1,15 +1,14 @@
 /*
  * Palpera signup forms -> Formspree.
  *
- * DO NOT SHIP until FORMSPREE_ENDPOINT holds TJ's real form URL
- * (Formspree dashboard -> your form -> Integration, looks like
- * https://formspree.io/f/abcdwxyz).
+ * FORMSPREE_ENDPOINT is TJ's form (Formspree dashboard -> the form ->
+ * Integration). To move to another form, change this one line.
  *
  * Free plan (checked November 2026): 50 submissions a month, and submissions
  * are kept for 30 days only. Export the list regularly, and move it into a
  * mailing-list tool before sending the launch email.
  */
-var FORMSPREE_ENDPOINT = 'https://formspree.io/f/REPLACE_WITH_FORM_ID';
+var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
 
 (function () {
   'use strict';
