@@ -21,6 +21,9 @@
 #   PALPERA_SEQ_SCALE  1 | 2 | 3  sequence frame multiplier (default 2 = 299 frames)
 #   PALPERA_SEQ_FORMAT webp | png  file type for the website shots (default webp:
 #                    about 25 KB a frame instead of about 1.2 MB, quick to upload)
+#   PALPERA_SEQ_FRAMES  render only these sequence frames, for a quick check:
+#                    a comma list of frame numbers and/or first, middle, last
+#                    (e.g. "first,middle,last"). Default: all.
 
 import bpy
 import bmesh
@@ -53,6 +56,10 @@ SEQ_FRAMES = 150
 # Render 2x or 3x as many in-between frames for a smoother scrub, same motion.
 SEQ_SCALE = max(1, int(os.environ.get("PALPERA_SEQ_SCALE", "2")))
 SEQ_FORMAT = os.environ.get("PALPERA_SEQ_FORMAT", "webp").lower()
+# Opening lens of the website sequence (mm). The five-pod row sits centred in
+# the frame with no camera shift (docs/L2-REDESIGN.md 4.4): the page's lids
+# leave a centred slit, so the stack no longer makes room for a headline.
+OPEN_LENS = float(os.environ.get("PALPERA_OPEN_LENS", "40"))
 SEQ_EXT = ".webp" if SEQ_FORMAT == "webp" else ".png"
 
 
@@ -689,13 +696,12 @@ def build_web_sequence():
         on = span(f, 30, 84)
         off = span(f, 104, 140)
         target.location = LINEUP_CAM_TARGET.lerp(pod_at, on).lerp(HERO_CAM_TARGET, off)
-        cam.data.lens = 35 + (62 - 35) * c
-        # the stack starts right of centre, leaving room for the headline:
-        # it spans about 47% to 94% of the frame width, clear of the hero
-        # text on a 16:10 laptop screen
-        sh = span(f, 34, 104)
-        cam.data.shift_x = -0.22 * (1 - sh)
-        cam.data.shift_y = 0.04 * (1 - sh)
+        cam.data.lens = OPEN_LENS + (62 - OPEN_LENS) * c
+        # No shift: the stack starts centred, in the middle of the page's
+        # slit. (It used to start right of centre, lens 35 and shift_x -0.22,
+        # to leave room for a headline.) The end framing is unchanged.
+        cam.data.shift_x = 0.0
+        cam.data.shift_y = 0.0
 
     roots = [LINEUP_ROOTS[c] for c in others]
     for F in range(1, SEQ_LAST + 1):
@@ -823,6 +829,11 @@ def render_web(do_sequence, do_colours):
         frames = list(range(1, SEQ_LAST + 1, SEQ_STEP))
         if frames[-1] != SEQ_LAST:
             frames.append(SEQ_LAST)
+        pick = os.environ.get("PALPERA_SEQ_FRAMES", "").strip()
+        if pick:
+            named = {"first": 1, "middle": (SEQ_LAST + 1) // 2, "last": SEQ_LAST}
+            frames = sorted({named[w] if w in named else max(1, min(SEQ_LAST, int(w)))
+                             for w in (x.strip().lower() for x in pick.split(",")) if w})
         for f in frames:
             scene.frame_set(f)
             r.filepath = os.path.join(seq_dir, "frame_%04d%s" % (f, SEQ_EXT))

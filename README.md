@@ -45,7 +45,18 @@ Upload everything in `renders\sequence`, `renders\colours` and `renders\anchors.
 python tools/frames_to_webp.py <folder with sequence/, colours/, anchors.json>
 ```
 
-This copies the frames into `assets/sequence/` (WebP at 1600 px is copied as is, not recompressed), crops the phone hero still, copies `anchors.json` to `data/`, sets `data-frames` in `index.html`, checks that the violet still matches the last frame, and prints the total size (budget: under 10 MB). Use `PALPERA_QUALITY=preview` for a quick low-resolution look at the motion. Never pass `--watermark` for real renders.
+This copies the frames into `assets/sequence/` (WebP at 1600 px is copied as is, not recompressed), crops the phone hero still, copies `anchors.json` to `data/`, sets `data-frames` in `index.html`, checks that the violet still matches the last frame, and prints the total size (budget: under 10 MB). Use `PALPERA_QUALITY=preview` for a quick low-resolution look at the motion, and `PALPERA_SEQ_FRAMES=first,middle,last` (or frame numbers) to render only a few frames. Never pass `--watermark` for real renders.
+
+## L2 "Eyelid" redesign (preview)
+
+`preview/` holds the redesign from `docs/L2-REDESIGN.md`, reachable at `/Palpera/preview/` (noindex). The live root is untouched until TJ approves it. The preview has its own `index.html`, `css/` and `js/` (adds `js/lids.js` for the opening and `js/team.js`) and reads the shared `data/` and `assets/` from the root through `../` paths (`data-base="../"` on `<html>`).
+
+- Opening: two violet lids leave a slit over frame 1; scrolling (the `opening` phase in `VH`) opens them and moves the name into the 64 px bar. Same smoothed scroll value, transform and opacity only, measured on resize only.
+- Chrome layout traps to keep out (measured): scaling SVG elements; toggling a class or `pointer-events` mid-scroll; changing opacity from exactly 0; switching an element between no transform and a transform (faded elements are parked off screen with a transform and always carry one).
+- "Who we are" reads `data/team.json`; while it lists nobody, the section and its bar link stay hidden.
+- New frames for the redesign (opening lens 40, no shift; last frame unchanged) go in `preview/assets/sequence/` until promotion, so the live site keeps frames that suit its own layout.
+
+To promote: move `preview/index.html`, `preview/css`, `preview/js` to the root, drop the `../` paths and `data-base`, move the new frames to `assets/sequence/`, remove the noindex tag, delete `preview/`.
 
 ## Editing specs
 

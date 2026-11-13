@@ -1,0 +1,419 @@
+/* Palpera, L2 "Eyelid" (docs/L2-REDESIGN.md). */
+
+:root {
+  /* Colour (section 3) */
+  --violet: #2A1F5C;      /* lids, bar, closing band; the one interactive colour on light surfaces */
+  --bone: #F0EDF8;        /* text and button fill on violet; ring fill */
+  --lilac: #CFC8EC;       /* small text on violet */
+  --edge-dark: #A79DD6;   /* input border on violet */
+  --ink: #1B143D;         /* text on light surfaces and over the frames */
+  --muted: #575170;       /* muted text on light surfaces */
+  --ground: #F9F8FC;      /* light sections */
+  --band: #F0EDF8;        /* alternate band */
+  --edge: #6F6A8A;        /* input border on light surfaces */
+  --card: #FCFBFE;        /* near-white detail cards */
+  --error: #A3302A;
+
+  /* Type (section 3) */
+  --display: "Bodoni Moda", "Bodoni 72", "Didot", Georgia, serif;
+  --sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --wrap: 72rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --radius: 2px;
+  --bar: 64px;
+
+  /* Set by sequence.js from its phase budget (opening + frames + callouts +
+     carousel); this is the value for four callouts. */
+  --seq-length: 727vh;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg, canvas { display: block; max-width: 100%; }
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0 0 0.5em;
+}
+h2 { font-size: clamp(2rem, 3.4vw, 2.75rem); }
+h3 { font-size: 1.5rem; line-height: 1.2; }
+p { margin: 0 0 1em; }
+
+a { color: var(--violet); text-underline-offset: 0.18em; }
+
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; border-radius: var(--radius); }
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+.narrow { max-width: 44rem; }
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip {
+  position: fixed; left: 1rem; top: -4rem; z-index: 100;
+  background: var(--bone); color: var(--violet); padding: 0.6rem 1rem; border-radius: var(--radius);
+  text-decoration: none; font-size: 14px;
+}
+.skip:focus { top: 0.75rem; }
+
+/* Sections linked from the bar clear it. */
+[id] { scroll-margin-top: var(--bar); }
+
+/* ---------- Buttons and inputs (2 px corners) ---------- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 1.25rem;
+  border: 0; border-radius: var(--radius);
+  background: var(--violet); color: var(--bone);
+  font: 500 14px/1 var(--sans); text-decoration: none; white-space: nowrap;
+  cursor: pointer;
+}
+.btn:hover { background: #3A2D78; }
+.btn[disabled] { opacity: 0.6; cursor: progress; }
+.btn-bone { background: var(--bone); color: var(--violet); }
+.btn-bone:hover { background: #FFFFFF; }
+
+.input {
+  flex: 1 1 14rem; min-width: 0; min-height: 44px; padding: 0 0.9rem;
+  border: 1px solid var(--edge); border-radius: var(--radius);
+  background: #FFFFFF; color: var(--ink);
+  font: 400 16px/1 var(--sans);
+}
+.input::placeholder { color: var(--muted); opacity: 0.85; }
+.input:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+.input[aria-invalid="true"] { border-color: var(--error); }
+
+/* ---------- Signup ---------- */
+
+.signup { margin-top: 1.5rem; max-width: 30rem; }
+.signup-label { display: block; margin-bottom: 0.5rem; font-size: 14px; font-weight: 500; }
+.signup-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.signup-status { min-height: 1.5em; margin: 0.5rem 0 0; font-size: 14px; }
+.signup-status:empty { min-height: 0; margin: 0; }
+.signup-status.is-ok { color: var(--violet); font-weight: 500; }
+.signup-status.is-error { color: var(--error); }
+.gotcha { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.small-print { margin: 0.6rem 0 0; font-size: 12px; line-height: 1.5; color: var(--lilac); }
+
+/* Signups on violet: bone text, lilac small print, #A79DD6 edges. */
+.signup-dark { color: var(--bone); }
+.signup-dark .input { background: transparent; color: var(--bone); border-color: var(--edge-dark); }
+.signup-dark .input::placeholder { color: var(--lilac); opacity: 0.8; }
+.signup-dark .input:focus-visible { outline-color: var(--bone); }
+.signup-dark .signup-status.is-ok { color: var(--bone); }
+.signup-dark .signup-status.is-error { color: #FFC9C4; }
+.band-violet :focus-visible, .lid :focus-visible, .bar :focus-visible { outline-color: var(--bone); }
+
+/* ---------- The bar (section 4.3) ---------- */
+
+.bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  height: 56px; padding: 0 var(--gutter);
+  background: var(--violet); color: var(--bone);
+}
+.bar-name {
+  font: 500 22px/1 var(--display); color: var(--bone); text-decoration: none;
+}
+.bar-nav { display: flex; align-items: center; gap: 2rem; }
+.bar-link { color: var(--bone); font-size: 14px; text-decoration: none; }
+.bar-link:hover { text-decoration: underline; }
+.bar-link[hidden] { display: none; }
+
+/* Phones and reduced motion: a slim bar with the name and the button only. */
+.bar .bar-link { display: none; }
+body { padding-top: 56px; }
+
+/* ---------- Lids: phones and reduced motion (section 7) ---------- */
+
+.lid { background: var(--violet); color: var(--bone); }
+.lid-top { padding: 2rem var(--gutter) 1.5rem; overflow: hidden; }
+.name {
+  margin: 0; line-height: 1; white-space: nowrap; color: var(--bone);
+  font-size: clamp(3rem, 25vw, 14rem); letter-spacing: -0.01em;
+}
+.name a { color: inherit; text-decoration: none; }
+.name-baseline { display: inline-block; width: 0; height: 0; vertical-align: baseline; }
+.lids-still { margin: 0; background: #E6E2F0; }
+.lids-still img { width: 100%; height: auto; }
+.lid-bottom { padding: 2rem var(--gutter) 2.5rem; }
+.headline { margin: 0; max-width: 592px; font-size: 28px; line-height: 1.25; font-weight: 400; color: var(--bone); }
+.lid-content .signup { margin-top: 1.5rem; }
+
+/* ---------- Sequence stage and carousel: static version (default) ---------- */
+
+.sequence { padding: 1.5rem 0 clamp(3rem, 7vw, 5rem); }
+.stage { position: relative; width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+.stage-canvas { display: none; }
+
+.carousel { position: relative; }
+.carousel:focus-visible { outline-offset: 6px; }
+.carousel-view {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radius); background: #E6E2F0;
+  touch-action: pan-y; overscroll-behavior-x: contain;
+  user-select: none; -webkit-user-select: none;
+}
+.carousel-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 50%;
+  opacity: 0; transition: opacity 0.5s ease;
+  -webkit-user-drag: none; pointer-events: none;
+}
+.carousel-img.is-active { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .carousel-img { transition-duration: 0.01ms; } }
+
+.carousel-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; }
+.arrow {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border: 1px solid var(--edge); border-radius: var(--radius);
+  background: var(--ground); color: var(--ink); cursor: pointer;
+}
+.arrow:hover { border-color: var(--violet); color: var(--violet); }
+.arrow svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.dots { display: flex; gap: 0.35rem; }
+.dot {
+  position: relative; width: 44px; height: 44px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; cursor: pointer;
+}
+.dot::before {
+  content: ""; position: absolute; inset: 13px; border-radius: 50%;
+  background: var(--c); box-shadow: inset 0 0 0 1px rgba(27, 20, 61, 0.18);
+  transition: transform 0.2s ease;
+}
+.dot::after {
+  content: ""; position: absolute; inset: 7px; border-radius: 50%;
+  border: 1.5px solid transparent; transition: border-color 0.2s ease;
+}
+.dot:hover::before { transform: scale(1.1); }
+.dot[aria-pressed="true"]::after { border-color: var(--ink); }
+
+.render-label { margin: 0; font-size: 12px; color: var(--ink); }
+.stage-label { margin-top: 0.6rem; text-align: right; }
+
+/* ---------- Desktop: lids, bar and scroll stage (html.seq) ---------- */
+
+.seq body { padding-top: 0; }
+.seq .bar {
+  height: var(--bar); padding: 0 72px;
+  background: transparent; pointer-events: none;   /* the violet is the top lid's last strip */
+}
+.seq .bar-name { visibility: hidden; }              /* the name lives in the top lid */
+.seq .bar .bar-link { display: inline; }
+.seq .bar-nav { pointer-events: auto; transform: translateY(0); }   /* always a transform: see lids.js */
+
+.seq .lids { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+.seq .lids-still { display: none; }
+.seq .lid { position: absolute; left: 0; right: 0; padding: 0; will-change: transform; }
+.seq .lid-top { top: 0; height: 31vh; overflow: hidden; }
+.seq .lid-bottom { top: 72vh; height: 28vh; display: flex; align-items: center; }
+.seq .name {
+  position: absolute; left: 0; top: 0; transform-origin: 0 0;
+  font-size: 18vw;   /* lids.js sets the exact size on load and resize */
+  will-change: transform;
+}
+.seq .name a { pointer-events: auto; }
+.seq .lid-content {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 3rem;
+  width: 100%; padding: 0 72px; pointer-events: auto; transform: translateY(0);
+}
+.seq .lid-content .signup { margin-top: 0; flex: 0 1 34rem; }
+
+.seq .sequence { height: var(--seq-length); padding: 0; }
+/* The frames and their backdrop colours (sampled from frame 1 by
+   sequence.js) fill the area below the bar. */
+.seq .sequence { --stage-top: #CFC9E0; --stage-bottom: #DCD7EA; }
+.seq .stage {
+  position: sticky; top: var(--bar); height: calc(100vh - var(--bar)); min-height: 32rem; max-width: none;
+  padding: 0; overflow: hidden;
+  background: linear-gradient(var(--stage-top) 50%, var(--stage-bottom) 50%);
+}
+/* Soft blend from the frame's floor into the band below. Sits over canvas
+   and carousel alike, so the handover between them is unaffected. */
+.seq .stage::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22vh;
+  background: linear-gradient(rgba(240, 237, 248, 0), var(--band));
+  pointer-events: none; z-index: 1;
+}
+.seq .carousel-controls, .seq .stage-label { z-index: 2; }
+.seq .stage-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.seq .carousel { position: absolute; inset: 0; }
+.seq .carousel:focus-visible { outline-offset: -6px; }
+.seq .carousel-view { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: transparent; }
+/* Same geometry as the canvas in sequence.js: full width, placed by
+   --img-top / --img-h. */
+.seq .carousel-img { top: var(--img-top, 0); bottom: auto; height: var(--img-h, 100%); object-fit: fill; }
+.seq .carousel-view::before, .seq .carousel-view::after {
+  content: ""; position: absolute; left: 0; right: 0; height: var(--fade-h, 0);
+  opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+}
+.seq .carousel-view::before { top: var(--img-top, 0); background: linear-gradient(var(--stage-top), transparent); }
+.seq .carousel-view::after {
+  top: calc(var(--img-top, 0px) + var(--img-h, 0px) - var(--fade-h, 0px));
+  background: linear-gradient(transparent, var(--stage-bottom));
+}
+.seq .carousel-img { visibility: hidden; }
+.seq .sequence.at-end .carousel-img { visibility: visible; }
+/* Violet is the last frame, already on the canvas: no image swap. */
+.seq .sequence .carousel-img[data-colour="violet"] { visibility: hidden; }
+.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::before,
+.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::after { opacity: var(--fade-on, 0); }
+@media (prefers-reduced-motion: reduce) { .seq .carousel-view::before, .seq .carousel-view::after { transition: none; } }
+
+/* Opacity and position follow the scroll (sequence.js); no transitions. */
+.seq .carousel-controls {
+  position: absolute; left: 50%; bottom: clamp(1.5rem, 6vh, 3.5rem); margin: 0;
+  transform: translate(-50%, 12px);
+  opacity: 0; visibility: hidden;
+}
+.seq .stage-label { position: absolute; right: var(--gutter); bottom: 1rem; margin: 0; }
+.seq .sequence:not(.at-end) .carousel { pointer-events: none; }
+
+/* ---------- Callouts (section 5: restyle only) ---------- */
+
+.callouts { display: none; }
+.seq .callouts {
+  display: block; position: absolute; inset: 0; z-index: 2;
+  pointer-events: none; opacity: 0; visibility: hidden;
+}
+.co-lines { position: absolute; left: 0; top: 0; overflow: visible; }
+/* Hidden by stroke-dashoffset alone, with butt ends. */
+.co-line {
+  fill: none; stroke: var(--violet); stroke-width: 1.25; stroke-linecap: butt; stroke-linejoin: round;
+  stroke-dashoffset: 10000;
+}
+.co-rings { position: absolute; left: 0; top: 0; }
+.co-ring { position: absolute; left: 0; top: 0; width: 12px; height: 12px; }
+.co-ring-dot {
+  width: 100%; height: 100%; box-sizing: border-box; border-radius: 50%;
+  background: var(--bone); border: 1.5px solid var(--violet);
+  transform: scale(0); will-change: transform;
+}
+.co-label { position: absolute; left: 0; top: 0; white-space: nowrap; }
+.co-label-inner { opacity: 0; will-change: opacity, transform; }
+.co-face {
+  position: relative; display: block; margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.co-heading, .co-value { display: block; }
+.co-heading, .spec-heading {
+  margin: 0 0 0.2rem; font: 500 14px/1.3 var(--sans); color: var(--violet);
+}
+.co-value { margin: 0; font: 500 28px/1.2 var(--display); color: var(--ink); }
+.co-value.is-pending { color: var(--ink); }
+.co-face:focus-visible { outline: 2px solid var(--violet); outline-offset: 6px; }
+
+.co-more {
+  position: absolute; top: 1px; right: -22px; width: 15px; height: 15px; border-radius: 50%;
+  border: 1.25px solid var(--violet);
+  /* Hidden by scale, not opacity: in Chrome an opacity change from exactly
+     0 costs a layout, and this switches mid-scroll. */
+  transform: scale(0);
+}
+.co-more::before, .co-more::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 1.25px;
+  background: var(--violet); transform: translate(-50%, -50%);
+}
+.co-more::after { transform: translate(-50%, -50%) rotate(90deg); transition: transform 0.25s ease; }
+.co-label.is-open .co-more::after { transform: translate(-50%, -50%) rotate(0deg); }
+.co-detail {
+  position: absolute; left: 0; top: calc(100% + 18px); width: 17rem; margin: 0;
+  padding: 0.75rem 0.9rem; border-radius: var(--radius);
+  background: var(--card); border: 1px solid rgba(42, 31, 92, 0.12);
+  font: 400 14px/1.5 var(--sans); color: var(--ink); white-space: normal;
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+.co-label.is-left .co-detail { left: auto; right: 0; }
+.co-label.is-open .co-detail {
+  opacity: 1; visibility: visible; transform: none; pointer-events: auto;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) { .co-detail, .co-more::after { transition: none; } }
+
+.co-intro {
+  position: absolute; bottom: clamp(1.25rem, 6vh, 3rem); max-width: 34rem;
+  left: clamp(1.5rem, 4vw, 5rem);
+  will-change: opacity, transform; opacity: 0;
+}
+.co-title { font-size: 44px; line-height: 1.15; margin-bottom: 0.3em; }
+.co-intro p { margin: 0; font-size: 16px; color: var(--ink); }
+
+/* Phones and reduced motion: the same callouts as a list under the still. */
+.callout-static { margin-top: 2.5rem; }
+.callout-static .co-title { font-size: clamp(2rem, 7vw, 2.75rem); }
+.callout-static > p { color: var(--muted); }
+.seq .callout-static { display: none; }
+
+/* ---------- Spec list ---------- */
+
+.spec-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 1.75rem 2.5rem; margin: 1.5rem 0 0; padding: 0;
+}
+.spec { margin: 0; }
+.spec-value { margin: 0; font: 500 24px/1.2 var(--display); color: var(--ink); }
+.spec-value.is-pending { color: var(--muted); }
+.spec-detail { margin: 0.35rem 0 0; color: var(--muted); font-size: 14px; max-width: 30rem; }
+.specs.band { padding: clamp(3rem, 6vw, 4.5rem) 0; }
+.specs h2 { margin-bottom: 1.5rem; }
+.specs .spec-list { margin-top: 0; }
+
+/* ---------- Bands ---------- */
+
+.band { padding: clamp(4rem, 9vw, 7rem) 0; }
+.band-alt { background: var(--band); }
+.band-violet { background: var(--violet); color: var(--bone); }
+.band-violet h2 { color: var(--bone); }
+
+.reason-list, .steps, .team-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.5rem; }
+@media (min-width: 760px) { .reason-list, .steps, .team-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3rem; } }
+.reason p, .step p, .person p { color: var(--muted); }
+
+.icon { width: 4rem; height: 2.5rem; margin-bottom: 1.25rem; overflow: visible; }
+.icon * { fill: none; stroke: var(--violet); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.icon .dot-fill { fill: var(--violet); stroke: none; }
+
+.how h2 { margin-bottom: 2.5rem; }
+.step-label { margin: 0 0 0.75rem; font-size: 14px; font-weight: 500; color: var(--violet); }
+.step p.step-label { color: var(--violet); }
+
+.where p { font-size: 18px; color: var(--muted); }
+.where p:first-of-type { color: var(--ink); }
+
+.who[hidden] { display: none; }
+.person-role { margin: -0.25rem 0 0.5rem; font-size: 14px; font-weight: 500; color: var(--violet); }
+.person p.person-role { color: var(--violet); }
+
+.closing h2 { max-width: 30rem; }
+.closing .signup { margin-top: 1.5rem; }
+.closing .signup-label { font-weight: 400; font-size: 16px; }
+
+/* ---------- Footer ---------- */
+
+.site-footer { padding: 2.5rem 0; font-size: 14px; color: var(--muted); }
+.footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
+.footer-inner p { margin: 0; }
+.seq .bar .bar-link[hidden] { display: none; }
