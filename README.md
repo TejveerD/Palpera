@@ -11,13 +11,15 @@ js/signup.js          Formspree signup (FORMSPREE_ENDPOINT lives here)
 assets/hero/          stack.webp: hero stack still (phones, reduced motion)
 assets/sequence/      frame_0001.webp ... frame_0150.webp
 assets/colours/       violet / red / graphite / silver / sand .webp
-tools/palpera_pod.py        Blender scene script (TJ's; must be added)
+tools/palpera_pod.py        Blender scene script
+concept-renders/            full-size renders from palpera_pod.py (not used by the page)
+concept-renders/website/    PNG sources of the page's sequence and colour stills
 tools/frames_to_webp.py     PNG renders -> WebP assets
 ```
 
 ## Before launch: do not ship until all of these are done
 
-1. **Real renders.** The images in `assets/` are stand-ins, each stamped "STAND-IN, NOT A CONCEPT RENDER". Replace them with renders from `tools/palpera_pod.py` (see below).
+1. **Real renders.** Done: `assets/` holds the WebP versions of the `sequence` and `colours` renders from `palpera_pod.py` (sources in `concept-renders/website/`).
 2. **Formspree endpoint.** Put the form URL in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`. Until then the form says "Signup is not connected yet."
 3. **Contact email.** Replace `[YOUR CONTACT EMAIL]` in the footer of `index.html`, ideally as a `mailto:` link.
 

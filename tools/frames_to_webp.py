@@ -2,12 +2,12 @@
 Convert Blender PNG renders into the WebP files the page loads.
 
     python tools/frames_to_webp.py RENDERS_DIR [--site .] [--width 1600]
-                                   [--quality 82] [--watermark]
+                                   [--quality 95] [--watermark]
 
 RENDERS_DIR is PALPERA_OUT from a palpera_pod.py run with
 PALPERA_SHOTS=sequence,colours, containing:
     sequence/frame_0001.png ...      -> assets/sequence/frame_0001.webp ...
-    sequence/hero_stack.png          -> assets/hero/stack.webp
+    sequence/hero_stack.png          -> assets/hero/stack.webp (cropped to the pods)
     colours/<colour>.png             -> assets/colours/<colour>.webp
 
 The violet carousel still is written from the LAST sequence frame, so the
@@ -67,6 +67,34 @@ def stamp(im):
     return im
 
 
+def crop_to_subject(im, margin=0.18):
+    """Crop a still to its subject at 16:9, for the phone hero. Frame 1 leaves
+    the left half empty for the desktop headline; a phone has no text beside
+    the image, so the pods are framed tighter. Subject = pixels that are
+    clearly darker or more saturated than the lavender backdrop."""
+    small = im.resize((im.width // 4, im.height // 4))
+    px = small.load()
+    xs, ys = [], []
+    for y in range(small.height):
+        for x in range(small.width):
+            r, g, b = px[x, y]
+            if max(r, g, b) - min(r, g, b) > 60 or max(r, g, b) < 140:
+                xs.append(x)
+                ys.append(y)
+    if not xs:
+        return im
+    x0, x1, y0, y1 = min(xs) * 4, max(xs) * 4 + 4, min(ys) * 4, max(ys) * 4 + 4
+    w = (x1 - x0) * (1 + 2 * margin)
+    h = (y1 - y0) * (1 + 2 * margin)
+    w = max(w, h * 16 / 9, im.width * 0.4)
+    h = w * 9 / 16
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    left = min(max(cx - w / 2, 0), im.width - w)
+    top = min(max(cy - h / 2, 0), im.height - h)
+    box = tuple(round(v) for v in (left, top, left + w, top + h))
+    return im.crop(box).resize((im.width, im.height), Image.LANCZOS)
+
+
 def save(im, path, quality, watermark):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if watermark:
@@ -80,7 +108,7 @@ def main():
     ap.add_argument("renders")
     ap.add_argument("--site", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
     ap.add_argument("--width", type=int, default=1600)
-    ap.add_argument("--quality", type=int, default=82)
+    ap.add_argument("--quality", type=int, default=95)   # lower values band the soft backdrop
     ap.add_argument("--watermark", action="store_true")
     a = ap.parse_args()
 
@@ -105,7 +133,7 @@ def main():
 
     stack = os.path.join(seq_dir, "hero_stack.png")
     if os.path.exists(stack):
-        total["hero"] += save(load(stack, a.width), os.path.join(site, "assets", "hero", "stack.webp"),
+        total["hero"] += save(crop_to_subject(load(stack, a.width)), os.path.join(site, "assets", "hero", "stack.webp"),
                               a.quality, a.watermark)
 
     for c in COLOURS:
