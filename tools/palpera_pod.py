@@ -18,7 +18,9 @@
 #   PALPERA_WORLD / PALPERA_FLOOR / PALPERA_FRAME   sRGB hex colours for the
 #                    studio wall, the floor and the glasses frame
 #   PALPERA_COLOURS  comma list limiting which pod colours the colours shot renders
-#   PALPERA_SEQ_SCALE  1 | 2 | 3  sequence frame multiplier (2 = 299 frames)
+#   PALPERA_SEQ_SCALE  1 | 2 | 3  sequence frame multiplier (default 2 = 299 frames)
+#   PALPERA_SEQ_FORMAT webp | png  file type for the website shots (default webp:
+#                    about 25 KB a frame instead of about 1.2 MB, quick to upload)
 
 import bpy
 import bmesh
@@ -49,7 +51,9 @@ SEQ_TIERS = {
 SEQ_RES, SEQ_SAMPLES, SEQ_STEP = SEQ_TIERS.get(QUALITY, SEQ_TIERS["final"])
 SEQ_FRAMES = 150
 # Render 2x or 3x as many in-between frames for a smoother scrub, same motion.
-SEQ_SCALE = max(1, int(os.environ.get("PALPERA_SEQ_SCALE", "1")))
+SEQ_SCALE = max(1, int(os.environ.get("PALPERA_SEQ_SCALE", "2")))
+SEQ_FORMAT = os.environ.get("PALPERA_SEQ_FORMAT", "webp").lower()
+SEQ_EXT = ".webp" if SEQ_FORMAT == "webp" else ".png"
 
 
 def seq_f(f):
@@ -561,11 +565,74 @@ def key(ob, path, frame, value=None):
     ob.keyframe_insert(data_path=path, frame=seq_f(frame))
 
 
+def smoother(t):
+    """Ease in and out with zero speed and acceleration at both ends."""
+    t = min(1.0, max(0.0, t))
+    return t * t * t * (t * (t * 6 - 15) + 10)
+
+
+def span(f, a, b):
+    return smoother((f - a) / float(b - a))
+
+
+def path(points, samples=600):
+    """A smooth curve through the points (centripetal Catmull-Rom), walked by
+    distance, so motion along it has one continuous speed with no stop at the
+    points it passes through. Returns at(u) for u in 0..1."""
+    pts = [Vector(p) for p in points]
+    ext = [pts[0] * 2 - pts[1]] + pts + [pts[-1] * 2 - pts[-2]]
+
+    def seg(p0, p1, p2, p3, t):
+        def tj(ti, a, b):
+            return ti + max((b - a).length, 1e-6) ** 0.5
+        t0 = 0.0
+        t1 = tj(t0, p0, p1)
+        t2 = tj(t1, p1, p2)
+        t3 = tj(t2, p2, p3)
+        tt = t1 + (t2 - t1) * t
+        a1 = p0 * ((t1 - tt) / (t1 - t0)) + p1 * ((tt - t0) / (t1 - t0))
+        a2 = p1 * ((t2 - tt) / (t2 - t1)) + p2 * ((tt - t1) / (t2 - t1))
+        a3 = p2 * ((t3 - tt) / (t3 - t2)) + p3 * ((tt - t2) / (t3 - t2))
+        b1 = a1 * ((t2 - tt) / (t2 - t0)) + a2 * ((tt - t0) / (t2 - t0))
+        b2 = a2 * ((t3 - tt) / (t3 - t1)) + a3 * ((tt - t1) / (t3 - t1))
+        return b1 * ((t2 - tt) / (t2 - t1)) + b2 * ((tt - t1) / (t2 - t1))
+
+    dense = []
+    n = len(pts) - 1
+    for i in range(n):
+        for k in range(samples // n):
+            dense.append(seg(ext[i], ext[i + 1], ext[i + 2], ext[i + 3], k / float(samples // n)))
+    dense.append(pts[-1].copy())
+    acc = [0.0]
+    for i in range(1, len(dense)):
+        acc.append(acc[-1] + (dense[i] - dense[i - 1]).length)
+    total = acc[-1] or 1.0
+
+    def at(u):
+        d = min(1.0, max(0.0, u)) * total
+        lo, hi = 0, len(acc) - 1
+        while hi - lo > 1:
+            mid = (lo + hi) // 2
+            if acc[mid] < d:
+                lo = mid
+            else:
+                hi = mid
+        w = (d - acc[lo]) / max(acc[hi] - acc[lo], 1e-9)
+        return dense[lo].lerp(dense[hi], w)
+    return at
+
+
 def build_web_sequence():
-    """Adds the keyframes and returns (camera, list of animated datablocks)."""
+    """Bakes the move into a key on every rendered frame and returns
+    (camera, list of animated datablocks).
+
+    Timing is in story frames 1..150 whatever PALPERA_SEQ_SCALE is; each
+    object follows one smooth curve with a single ease in and out, so nothing
+    slows down or stops part way (the old per-key Bezier easing did)."""
     animated = []
-    stack_pos = LINEUP_POS["violet"]
+    stack_pos = LINEUP_POS["violet"].copy()
     final_pos = Vector(POD_ON_TEMPLE)
+    ready_pos = final_pos + Vector((2.3, 0, 1.6))
 
     # camera that looks at a moving target
     target = bpy.data.objects.new("SeqTarget", None)
@@ -576,53 +643,92 @@ def build_web_sequence():
     con.target = target
     con.track_axis = "TRACK_NEGATIVE_Z"
     con.up_axis = "UP_Y"
-    ready_pos = final_pos + Vector((2.3, 0, 1.6))
-    for f in (1, 34):
-        key(cam, "location", f, LINEUP_CAM_POS)
-        key(target, "location", f, LINEUP_CAM_TARGET)
-        key(cam.data, "lens", f, 35)
-        # the stack starts right of centre, leaving room for the headline:
-        # it spans about 47% to 94% of the frame width, clear of the hero
-        # text on a 16:10 laptop screen (was lens 42, shift -0.18)
-        key(cam.data, "shift_x", f, -0.22)
-        key(cam.data, "shift_y", f, 0.04)
-    key(target, "location", 70, ready_pos)       # follow the pod as it lifts
-    key(cam.data, "shift_x", 72, 0.0)
-    key(cam.data, "shift_y", 72, 0.0)
-    for f in (138, SEQ_FRAMES):
-        key(cam, "location", f, HERO_CAM_POS)
-        key(target, "location", f, HERO_CAM_TARGET)
-        key(cam.data, "lens", f, 62)
-    animated += [cam, target, cam.data]
 
-    # the four other colours tuck in behind the violet pod, then shrink away
+    # The violet pod: lifts out of the stack, swings round beside the temple
+    # and slides straight on. One curve, one ease; the slow end is the clip.
+    pod_path = path([stack_pos, ready_pos, final_pos + Vector((1.9, 0, 0)),
+                     final_pos + Vector((0.7, 0, 0)), final_pos])
+
+    # The other four close up like an accordion: each slides along its own
+    # row toward the violet pod and ends straight behind it on the camera's
+    # line of sight. Start and end points are evenly spaced on two lines
+    # through the violet pod and all four move with the same timing, so the
+    # pods stay in a line, evenly spaced, and never pass through each other.
+    # The end spacing (1.5 cm along the sight line, about 1.1 cm sideways)
+    # keeps the bodies and clips (0.97 cm wide) apart.
     away = (stack_pos - LINEUP_CAM_POS).normalized()
     others = [c for c in LINEUP_ORDER if c != "violet"]
-    for i, cname in enumerate(others, start=1):
-        root = LINEUP_ROOTS[cname]
-        start = 1 + (len(others) - i) * 4
-        arrive = start + 26
-        key(root, "location", start, LINEUP_POS[cname])
-        key(root, "location", arrive, stack_pos + away * (0.5 * i))
-        key(root, "scale", arrive, (1, 1, 1))
-        key(root, "scale", arrive + 3, (0.001, 0.001, 0.001))
-        animated.append(root)
+    merge_start, merge_end = 6, 34          # story frames
+    shrink = (32, 38)                       # only once hidden behind violet
 
-    # the glasses are lowered into place
-    for f in (1, 44):
-        key(GLASSES_ROOT, "location", f, (0, 0, 34))
-    key(GLASSES_ROOT, "location", 92, (0, 0, 0))
-    animated.append(GLASSES_ROOT)
+    def pose(f):
+        s = span(f, merge_start, merge_end)
+        for i, cname in enumerate(others, start=1):
+            root = LINEUP_ROOTS[cname]
+            a = LINEUP_POS[cname] - stack_pos
+            b = away * (1.5 * i)
+            root.location = stack_pos + a.lerp(b, s)
+            k = 1.0 - 0.999 * span(f, *shrink)
+            root.scale = (k, k, k)
 
-    # the violet pod lifts clear, lines up beside the temple, then slides on
-    key(POD_ROOT, "location", 1, stack_pos)
-    key(POD_ROOT, "location", 40, stack_pos)
-    key(POD_ROOT, "location", 70, ready_pos)
-    key(POD_ROOT, "location", 98, final_pos + Vector((1.9, 0, 0)))
-    key(POD_ROOT, "location", 116, final_pos)
-    key(POD_ROOT, "location", SEQ_FRAMES, final_pos)
-    animated.append(POD_ROOT)
+        g = span(f, 44, 94)
+        GLASSES_ROOT.location = (0, 0, 34 * (1 - g))
+
+        pod_at = pod_path(span(f, 40, 118))
+        POD_ROOT.location = pod_at
+
+        c = span(f, 34, 138)
+        cam.location = LINEUP_CAM_POS.lerp(HERO_CAM_POS, c)
+        # The camera eases onto the pod, follows it through the flight, then
+        # eases off onto the three-quarter view. Aiming at a separate path
+        # let the two drift apart and the pod swept across the frame.
+        on = span(f, 30, 84)
+        off = span(f, 104, 140)
+        target.location = LINEUP_CAM_TARGET.lerp(pod_at, on).lerp(HERO_CAM_TARGET, off)
+        cam.data.lens = 35 + (62 - 35) * c
+        # the stack starts right of centre, leaving room for the headline:
+        # it spans about 47% to 94% of the frame width, clear of the hero
+        # text on a 16:10 laptop screen
+        sh = span(f, 34, 104)
+        cam.data.shift_x = -0.22 * (1 - sh)
+        cam.data.shift_y = 0.04 * (1 - sh)
+
+    roots = [LINEUP_ROOTS[c] for c in others]
+    for F in range(1, SEQ_LAST + 1):
+        pose(1 + (F - 1) / float(SEQ_SCALE))
+        for ob in roots:
+            ob.keyframe_insert(data_path="location", frame=F)
+            ob.keyframe_insert(data_path="scale", frame=F)
+        GLASSES_ROOT.keyframe_insert(data_path="location", frame=F)
+        POD_ROOT.keyframe_insert(data_path="location", frame=F)
+        cam.keyframe_insert(data_path="location", frame=F)
+        target.keyframe_insert(data_path="location", frame=F)
+        for p in ("lens", "shift_x", "shift_y"):
+            cam.data.keyframe_insert(data_path=p, frame=F)
+
+    animated = roots + [GLASSES_ROOT, POD_ROOT, cam, target, cam.data]
+    # A key on every frame: make the in-betweens linear so nothing overshoots.
+    for block in animated:
+        for fc in _fcurves(block):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
     return cam, animated
+
+
+def _fcurves(block):
+    """F-curves of a datablock's action (classic and layered action APIs)."""
+    ad = getattr(block, "animation_data", None)
+    action = ad.action if ad else None
+    if action is None:
+        return []
+    curves = list(getattr(action, "fcurves", None) or [])
+    if curves:
+        return curves
+    for layer in getattr(action, "layers", []):
+        for strip in layer.strips:
+            for bag in getattr(strip, "channelbags", []):
+                curves.extend(bag.fcurves)
+    return curves
 
 
 def clear_web_sequence(animated):
@@ -686,7 +792,11 @@ def render_web(do_sequence, do_colours):
     scene.cycles.samples = SEQ_SAMPLES
     if hasattr(r.image_settings, "media_type"):
         r.image_settings.media_type = "IMAGE"
-    r.image_settings.file_format = "PNG"
+    if SEQ_FORMAT == "webp":
+        r.image_settings.file_format = "WEBP"
+        r.image_settings.quality = 95       # lower values band the backdrop
+    else:
+        r.image_settings.file_format = "PNG"
     r.image_settings.color_mode = "RGB"
     r.film_transparent = False
     write_anchors(cam)
@@ -698,7 +808,7 @@ def render_web(do_sequence, do_colours):
         wanted = os.environ.get("PALPERA_COLOURS", ",".join(LINEUP_ORDER)).split(",")
         for cname in [c for c in LINEUP_ORDER if c in wanted]:
             set_pod_colour(cname)
-            r.filepath = os.path.join(col_dir, cname + ".png")
+            r.filepath = os.path.join(col_dir, cname + SEQ_EXT)
             bpy.ops.render.render(write_still=True)
             print("Palpera: wrote", r.filepath)
         set_pod_colour("violet")
@@ -711,11 +821,11 @@ def render_web(do_sequence, do_colours):
             frames.append(SEQ_LAST)
         for f in frames:
             scene.frame_set(f)
-            r.filepath = os.path.join(seq_dir, "frame_%04d.png" % f)
+            r.filepath = os.path.join(seq_dir, "frame_%04d%s" % (f, SEQ_EXT))
             bpy.ops.render.render(write_still=True)
             print("Palpera: sequence frame %d of %d" % (f, SEQ_LAST))
-        shutil.copyfile(os.path.join(seq_dir, "frame_0001.png"),
-                        os.path.join(seq_dir, "hero_stack.png"))
+        shutil.copyfile(os.path.join(seq_dir, "frame_0001" + SEQ_EXT),
+                        os.path.join(seq_dir, "hero_stack" + SEQ_EXT))
         print("Palpera: wrote sequence to", seq_dir)
 
     for ob in list(LINEUP_ROOTS["violet"].children_recursive):

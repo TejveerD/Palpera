@@ -348,6 +348,11 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 }
 .co-label { position: absolute; left: 0; top: 0; white-space: nowrap; }
 .co-label-inner { opacity: 0; will-change: opacity, transform; }
+.co-face {
+  position: relative; display: block; margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left;
+}
+.co-heading, .co-value { display: block; }
 .co-heading, .spec-heading {
   margin: 0 0 0.3rem;
   font: 600 13px/1.25 var(--sans); letter-spacing: 0.1em; text-transform: uppercase;
@@ -381,3 +386,37 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 .spec-value { margin: 0; font: 500 1.6rem/1.15 var(--serif); color: var(--ink); }
 .specs .spec-list { margin-top: 0; }
 .specs.band { padding: clamp(3rem, 6vw, 4.5rem) 0; }
+
+/* Expandable labels: open on hover, focus or click once every callout is
+   showing (callouts.js switches them on). The paragraph is a small card just
+   below the label's line, so opening it never moves anything else. */
+.co-face { cursor: pointer; }
+.co-face:focus-visible { outline: 2px solid #4A31A6; outline-offset: 6px; border-radius: 6px; }
+.co-more {
+  position: absolute; top: 0; right: -22px; width: 15px; height: 15px; border-radius: 50%;
+  border: 1.25px solid #3D2A96;
+  /* Hidden by scale, not opacity: in Chrome an opacity change from exactly
+     0 costs a layout, and this switches mid-scroll. */
+  transform: scale(0);
+}
+.co-more::before, .co-more::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 1.25px;
+  background: #3D2A96; transform: translate(-50%, -50%);
+}
+.co-more::after { transform: translate(-50%, -50%) rotate(90deg); transition: transform 0.25s ease; }
+.co-label.is-open .co-more::after { transform: translate(-50%, -50%) rotate(0deg); }
+.co-detail {
+  position: absolute; left: 0; top: calc(100% + 18px); width: 17rem; margin: 0;
+  padding: 0.75rem 0.9rem; border-radius: 12px;
+  background: rgba(249, 248, 252, 0.95); box-shadow: 0 6px 24px rgba(42, 31, 92, 0.12);
+  font: 400 0.95rem/1.5 var(--sans); color: var(--ink); white-space: normal;
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+.co-label.is-left .co-detail { left: auto; right: 0; }
+.co-label.is-open .co-detail {
+  opacity: 1; visibility: visible; transform: none; pointer-events: auto;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) { .co-detail, .co-more, .co-more::after { transition: none; } }
+.spec-detail { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; max-width: 30rem; }

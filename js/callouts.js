@@ -76,11 +76,31 @@
     });
 
     callouts.forEach(function (c) {
+      c.dir = PLACE[c.anchor].dir;
       var t = text(c);
-      var wrap = el('div', 'co-label');
+      var wrap = el('div', 'co-label' + (c.dir < 0 ? ' is-left' : ''));
       var inner = el('div', 'co-label-inner');
-      inner.appendChild(el('p', 'co-heading', c.heading));
-      inner.appendChild(el('p', 'co-value' + (t.pending ? ' is-pending' : ''), t.text));
+      var detail = (c.detail || '').trim();
+      // With a detail paragraph the label is a button that opens it (hover,
+      // focus or click), once all callouts are showing (see setLive).
+      var face = el(detail ? 'button' : 'div', 'co-face');
+      face.appendChild(el('span', 'co-heading', c.heading));
+      face.appendChild(el('span', 'co-value' + (t.pending ? ' is-pending' : ''), t.text));
+      inner.appendChild(face);
+      var para = null;
+      if (detail) {
+        var id = 'co-detail-' + c.anchor;
+        face.type = 'button';
+        face.setAttribute('aria-expanded', 'false');
+        face.setAttribute('aria-controls', id);
+        face.tabIndex = -1;
+        var more = el('span', 'co-more');
+        face.appendChild(more);
+        para = el('p', 'co-detail', detail);
+        para.id = id;
+        inner.appendChild(para);
+        wire(wrap, face);
+      }
       wrap.appendChild(inner);
       labelsBox.appendChild(wrap);
 
@@ -94,7 +114,8 @@
       ringPos.appendChild(ring);
       ringsBox.appendChild(ringPos);
 
-      items.push({ data: c, a: anchors[c.anchor], p: PLACE[c.anchor],
+      items.push({ data: c, a: anchors[c.anchor], p: PLACE[c.anchor], face: detail ? face : null,
+                   more: detail ? more : null,
                    el: wrap, inner: inner, ring: ring, ringPos: ringPos, line: line, len: 0, last: {} });
     });
 
@@ -114,7 +135,54 @@
     var d = el('div', 'spec');
     d.appendChild(el('dt', 'spec-heading', entry.heading));
     d.appendChild(el('dd', 'spec-value' + (t.pending ? ' is-pending' : ''), t.text));
+    if ((entry.detail || '').trim()) d.appendChild(el('dd', 'spec-detail', entry.detail.trim()));
     return d;
+  }
+
+  /* ---------- Expandable labels ---------- */
+
+  // Open while hovered or focused; a click pins it open (and closes others).
+  function wire(wrap, face) {
+    var hover = false, focus = false, pinned = false;
+    function sync() {
+      var open = live && (hover || focus || pinned);
+      if (wrap.classList.contains('is-open') === open) return;
+      wrap.classList.toggle('is-open', open);
+      face.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    wrap.addEventListener('mouseenter', function () { hover = true; sync(); });
+    wrap.addEventListener('mouseleave', function () { hover = false; sync(); });
+    face.addEventListener('focus', function () { focus = true; sync(); });
+    face.addEventListener('blur', function () { focus = false; sync(); });
+    face.addEventListener('click', function () {
+      var was = pinned;
+      closers.forEach(function (close) { close(); });
+      pinned = !was;
+      sync();
+    });
+    face.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { pinned = false; hover = false; face.blur(); sync(); }
+    });
+    closers.push(function () { pinned = false; sync(); });
+    syncers.push(function (off) { if (off) { pinned = false; hover = false; } sync(); });
+  }
+  var closers = [], syncers = [];
+
+  // The labels can only be opened once every callout is showing and before
+  // the fade to the carousel; scrolling away closes them.
+  var live = false;
+  function setLive(on) {
+    if (on === live) return;
+    live = on;
+    // Set on the buttons themselves: toggling a class on the layer makes
+    // the browser run layout, and this happens mid-scroll.
+    items.forEach(function (it) {
+      if (!it.face) return;
+      it.face.tabIndex = on ? 0 : -1;
+      it.face.style.pointerEvents = on ? 'auto' : '';
+      it.more.style.transform = on ? 'scale(1)' : '';
+    });
+    syncers.forEach(function (s) { s(!on); });
   }
 
   /* ---------- Layout (resize only) ---------- */
@@ -129,7 +197,7 @@
     items.forEach(function (it) {
       var ax = it.a.x * W, ay = top + it.a.y * H;
       var ex = it.p.elbow[0] * W, ey = top + it.p.elbow[1] * H;
-      var lw = it.el.offsetWidth, lh = it.el.offsetHeight;
+      var lw = it.el.offsetWidth + (it.face ? 24 : 0), lh = it.el.offsetHeight;   // + the open icon
       var run = Math.max(it.p.run * W, lw + 4);
 
       // Keep the label inside the window with a margin.
@@ -178,17 +246,21 @@
     layer.style.opacity = opacity;
     layer.style.visibility = opacity > 0 && t > 0 ? 'visible' : 'hidden';
 
+    setLive(t >= 1 && opacity >= 0.98);
+
     var n = items.length;
-    var h = ease(t * n / 0.4);
+    var h = ease(t * n / 0.3);
     if (heading) {
       heading.style.opacity = h;
       heading.style.transform = 'translateY(' + ((1 - h) * 6).toFixed(2) + 'px)';
     }
     items.forEach(function (it, i) {
       var u = t * n - i;                          // 0..1 for this callout
-      var ring = ease(u / 0.2);
-      var draw = ease((u - 0.12) / 0.5);
-      var lab = ease((u - 0.5) / 0.35);
+      // ring, line, label overlap closely; each callout is in by 70% of its
+      // share, the rest is a short beat before the next one starts
+      var ring = ease(u / 0.14);
+      var draw = ease((u - 0.06) / 0.38);
+      var lab = ease((u - 0.36) / 0.32);
       set(it, 'ring', ring.toFixed(3), function (v) {
         it.ring.style.transform = 'scale(' + v + ')';
       });

@@ -44,7 +44,7 @@
   //   hold      after the last callout
   //   fade      callouts fade out while the carousel controls fade in
   //   carousel  the carousel, live, before the stage unpins
-  var VH = { frames: 275, callout: 60, hold: 40, fade: 35, carousel: 45 };
+  var VH = { frames: 275, callout: 38, hold: 45, fade: 30, carousel: 45 };
   var phase;                       // the budget above as shares of 0..1
   function computePhases() {
     var n = window.palperaCallouts ? window.palperaCallouts.count() : 0;
@@ -83,7 +83,9 @@
 
   var target = 0;                  // scroll position wanted, 0..1 of the section
   var shown = 0;                   // smoothed scroll position: drives everything
-  var drawnImg = null;             // image currently on the canvas
+  var drawnImg = null;             // image currently on the canvas (null: redraw)
+  var drawnKey = '';
+  var cssW = 1, cssH = 1;          // canvas size in CSS px, measured on resize
   var sizeDirty = true;
   var rafId = 0;
   var lastTime = 0;
@@ -233,8 +235,10 @@
 
   function resizeCanvas() {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var w = Math.round(canvas.clientWidth * dpr);
-    var h = Math.round(canvas.clientHeight * dpr);
+    cssW = canvas.clientWidth;
+    cssH = canvas.clientHeight;
+    var w = Math.round(cssW * dpr);
+    var h = Math.round(cssH * dpr);
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
@@ -255,9 +259,12 @@
   }
 
   var geometry = '';
-  function draw(img) {
+  // Draws frame a, with frame b laid over it at the given opacity: the
+  // in-between of two neighbouring frames, so a slow scroll moves smoothly
+  // instead of stepping from frame to frame.
+  function draw(img, next, alpha) {
     var cw = canvas.width, ch = canvas.height;
-    var dpr = cw / Math.max(1, canvas.clientWidth);
+    var dpr = cw / Math.max(1, cssW);
     var dw = cw;
     var dh = Math.round(img.naturalHeight * cw / img.naturalWidth);
     var dy = Math.round((ch - dh) / 2);
@@ -272,6 +279,11 @@
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, dy, dw, dh);
+    if (next && alpha > 0) {
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(next, 0, dy, dw, dh);
+      ctx.globalAlpha = 1;
+    }
     if (dy > 0) {
       var g = ctx.createLinearGradient(0, dy, 0, dy + fade);
       g.addColorStop(0, TOP);
@@ -294,7 +306,7 @@
       section.style.setProperty('--fade-h', fade / dpr + 'px');
       section.style.setProperty('--fade-on', dy > 0 ? '1' : '0');
       if (window.palperaCallouts) {
-        window.palperaCallouts.layout(canvas.clientWidth, dy / dpr, dh / dpr, canvas.clientHeight);
+        window.palperaCallouts.layout(cssW, dy / dpr, dh / dpr, cssH);
       }
     }
   }
@@ -334,9 +346,27 @@
 
     if (sizeDirty) { resizeCanvas(); drawnImg = null; }
 
-    var index = Math.round(frameAt(shown));
+    var pos = frameAt(shown);
+    var index = Math.min(COUNT - 1, Math.floor(pos + 1e-6));
+    var frac = index >= COUNT - 1 ? 0 : pos - index;
     var img = nearestLoaded(index);
-    if (img && img !== drawnImg) draw(img);
+    // Blend only while scrolling slowly, where steps would show; a fast
+    // scroll draws single frames and costs half as much.
+    var slow = Math.abs(frameAt(target) - pos) < 1.5;
+    var next = slow && img === frames[index] && frac > 0 ? frames[index + 1] : null;
+    var mix = next ? Math.round(frac * 32) / 32 : 0;   // 32 steps per frame gap
+    // At rest, show the nearest whole frame: a blend left on screen would
+    // show a faint double image of anything moving fast (the glasses).
+    if (shown === target && next) {
+      if (frac >= 0.5) { img = next; }
+      next = null;
+      mix = 0;
+    }
+    var key = (img ? img.src : '') + '|' + (next ? next.src : '') + '|' + mix;
+    if (img && (key !== drawnKey || drawnImg === null)) {
+      draw(img, next, mix);
+      drawnKey = key;
+    }
 
     // Hand over only when the real last frame is actually on the canvas
     // (or when a keyboard visitor jumped here: the violet carousel still is
@@ -374,8 +404,9 @@
 
   // Keyboard visitors who tab into the carousel before scrolling there are
   // taken straight to the end of the sequence, where the carousel is live.
-  function onFocusIn() {
-    if (atEnd) return;
+  function onFocusIn(e) {
+    // Only the carousel: the callout labels have their own buttons.
+    if (atEnd || !(e.target.closest && e.target.closest('[data-carousel]'))) return;
     window.scrollTo({ top: endScrollY(), behavior: 'instant' });
     readScroll();
     shown = target;

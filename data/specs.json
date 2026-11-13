@@ -1,11 +1,13 @@
 {
-  "_help": "Edit values here; nothing is typed into the page itself. An empty value shows as \"Coming soon\". Never fill a slot with a guess. Entries can be added, removed or reordered freely. Callouts point at a spot on the pod: \"anchor\" must be one of sensor, clip, pod_top, pod_rear, pod_front (from data/anchors.json).",
+  "_help": "Edit values here; nothing is typed into the page itself. An empty value shows as \"Coming soon\". Never fill a slot with a guess. Entries can be added, removed or reordered freely. Callouts point at a spot on the pod: \"anchor\" must be one of sensor, clip, pod_top, pod_rear, pod_front (from data/anchors.json). A callout with a \"detail\" sentence can be opened (hover, click or keyboard) once all callouts are showing; leave it empty for none.",
 
   "callouts": [
-    { "anchor": "sensor",   "heading": "Blink sensor", "value": "Infrared, no camera" },
-    { "anchor": "clip",     "heading": "Clip",         "value": "Fits your own frame" },
-    { "anchor": "pod_top",  "heading": "Weight",       "value": "", "unit": "g" },
-    { "anchor": "pod_rear", "heading": "Battery life", "value": "", "unit": "hours" }
+    { "anchor": "sensor",   "heading": "Blink sensor", "value": "Infrared, no camera",
+      "detail": "A tiny infrared sensor at the end of a short arm, near the lens, follows how often and how fully you blink. It cannot take pictures." },
+    { "anchor": "clip",     "heading": "Clip",         "value": "Fits your own frame",
+      "detail": "The pod is designed to clip onto one temple of the glasses you already own, so there is no new frame and no new prescription." },
+    { "anchor": "pod_top",  "heading": "Weight",       "value": "", "unit": "g", "detail": "" },
+    { "anchor": "pod_rear", "heading": "Battery life", "value": "", "unit": "hours", "detail": "" }
   ],
 
   "specs": [

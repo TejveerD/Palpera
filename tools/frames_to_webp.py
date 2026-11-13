@@ -5,8 +5,9 @@ Convert Blender PNG renders into the WebP files the page loads.
                                    [--quality 95] [--watermark]
 
 RENDERS_DIR is PALPERA_OUT from a palpera_pod.py run with
-PALPERA_SHOTS=sequence,colours, containing:
-    sequence/frame_0001.png ...      -> assets/sequence/frame_0001.webp ...
+PALPERA_SHOTS=sequence,colours, containing (WebP by default, PNG also read):
+    sequence/frame_0001.webp ...     -> assets/sequence/frame_0001.webp ...
+                                        (and data-frames in index.html)
     sequence/hero_stack.png          -> assets/hero/stack.webp (cropped to the pods)
     colours/<colour>.png             -> assets/colours/<colour>.webp
     anchors.json                     -> data/anchors.json (callout positions)
@@ -29,6 +30,8 @@ brief's budget is under 10 MB for the sequence.
 import argparse
 import glob
 import os
+import re
+import shutil
 import sys
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageStat
@@ -104,6 +107,46 @@ def save(im, path, quality, watermark):
     return os.path.getsize(path)
 
 
+def find(folder, stem):
+    """stem.webp or stem.png (palpera_pod.py writes WebP by default)."""
+    for ext in (".webp", ".png"):
+        f = os.path.join(folder, stem + ext)
+        if os.path.exists(f):
+            return f
+    return None
+
+
+def passthrough(src, width, watermark):
+    """A WebP already at the right width is copied as it is, so it is not
+    compressed a second time."""
+    if watermark or not src.lower().endswith(".webp"):
+        return False
+    with Image.open(src) as im:
+        return im.width == width and im.mode == "RGB"
+
+
+def put(src, im, path, a):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if passthrough(src, a.width, a.watermark):
+        shutil.copyfile(src, path)
+        return os.path.getsize(path)
+    return save(im, path, a.quality, a.watermark)
+
+
+def set_frame_count(site, n):
+    """Keeps index.html's data-frames in step with the files written."""
+    page = os.path.join(site, "index.html")
+    if not os.path.exists(page):
+        return
+    with open(page, encoding="utf-8") as fh:
+        html = fh.read()
+    new = re.sub(r'data-frames="\d+"', 'data-frames="%d"' % n, html, count=1)
+    if new != html:
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write(new)
+        print("index.html: data-frames set to %d" % n)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("renders")
@@ -116,31 +159,32 @@ def main():
     site = os.path.abspath(a.site)
     seq_dir = os.path.join(a.renders, "sequence")
     col_dir = os.path.join(a.renders, "colours")
-    frames = sorted(glob.glob(os.path.join(seq_dir, "frame_[0-9]*.png")))
+    frames = sorted(glob.glob(os.path.join(seq_dir, "frame_[0-9]*.webp")))
+    if not frames:
+        frames = sorted(glob.glob(os.path.join(seq_dir, "frame_[0-9]*.png")))
     total = {"sequence": 0, "colours": 0, "hero": 0}
 
-    last = None
+    last = last_src = None
     if frames:
         out = os.path.join(site, "assets", "sequence")
         for old in glob.glob(os.path.join(out, "frame_*.webp")):
             os.remove(old)
         for i, f in enumerate(frames, 1):
             im = load(f, a.width)
-            total["sequence"] += save(im, os.path.join(out, "frame_%04d.webp" % i), a.quality, a.watermark)
-            last = im
+            total["sequence"] += put(f, im, os.path.join(out, "frame_%04d.webp" % i), a)
+            last, last_src = im, f
         print("sequence: %d frames, %.2f MB" % (len(frames), total["sequence"] / 1e6))
-        if len(frames) != 150:
-            print("  note: index.html expects data-frames=\"150\"; update it to %d" % len(frames))
+        set_frame_count(site, len(frames))
 
-    stack = os.path.join(seq_dir, "hero_stack.png")
-    if os.path.exists(stack):
+    stack = find(seq_dir, "hero_stack")
+    if stack:
         total["hero"] += save(crop_to_subject(load(stack, a.width)), os.path.join(site, "assets", "hero", "stack.webp"),
                               a.quality, a.watermark)
 
     for c in COLOURS:
-        src = os.path.join(col_dir, c + ".png")
+        src = find(col_dir, c)
         if c == "violet" and last is not None:
-            if os.path.exists(src):
+            if src:
                 diff = ImageChops.difference(load(src, a.width), last)
                 mean = sum(ImageStat.Stat(diff).mean) / 3
                 peak = max(b[1] for b in diff.getextrema())
@@ -148,13 +192,13 @@ def main():
                 if mean > 2.0:
                     print("  WARNING: large difference. Check that both shots use Cam_Hero, the same "
                           "resolution, lighting and pod pose.")
-            im = last
-        elif os.path.exists(src):
+            im, src = last, last_src
+        elif src:
             im = load(src, a.width)
         else:
-            print("missing", src)
+            print("missing", os.path.join(col_dir, c + ".webp"))
             continue
-        total["colours"] += save(im, os.path.join(site, "assets", "colours", c + ".webp"), a.quality, a.watermark)
+        total["colours"] += put(src, im, os.path.join(site, "assets", "colours", c + ".webp"), a)
 
     # Callout positions for this render (written by palpera_pod.py).
     anchors = os.path.join(a.renders, "anchors.json")
