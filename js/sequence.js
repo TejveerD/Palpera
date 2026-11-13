@@ -37,9 +37,32 @@
   var PATTERN = section.dataset.framePattern;
   var PAD = parseInt(section.dataset.framePad, 10) || 4;
 
-  // Share of the scroll range used to play the frames. The rest is a hold on
-  // the last frame so the carousel can be used before the stage unpins.
-  var PLAY_SHARE = 0.86;
+  // Scroll budget for each phase, in viewport heights (tune by feel). The
+  // pinned section is these added up plus one viewport for the stage itself.
+  //   frames    the 150-frame animation
+  //   callout   per callout on the held last frame (callouts.js)
+  //   hold      after the last callout
+  //   fade      callouts fade out while the carousel controls fade in
+  //   carousel  the carousel, live, before the stage unpins
+  var VH = { frames: 275, callout: 60, hold: 40, fade: 35, carousel: 45 };
+  var phase;                       // the budget above as shares of 0..1
+  function computePhases() {
+    var n = window.palperaCallouts ? window.palperaCallouts.count() : 0;
+    var total = VH.frames + n * VH.callout + VH.hold + VH.fade + VH.carousel;
+    var f = VH.frames / total, c = n * VH.callout / total;
+    phase = {
+      frames: f,
+      callouts: [f, f + c],
+      fade: [f + c + VH.hold / total, f + c + (VH.hold + VH.fade) / total],
+      total: total
+    };
+    phase.carouselMid = (phase.fade[1] + 1) / 2;
+    section.style.setProperty('--seq-length', (total + 100) + 'vh');
+  }
+  computePhases();
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function frameAt(p) { return clamp01(p / phase.frames) * (COUNT - 1); }
   // How far the displayed position moves toward the scroll position per
   // 60 Hz frame. Lower is smoother but lags more.
   var EASE = 0.16;
@@ -58,8 +81,8 @@
   var broken = false;              // frame 1 failed: static version for good
   var active = false;
 
-  var target = 0;                  // frame position wanted by scroll (float)
-  var shown = 0;                   // smoothed frame position (float)
+  var target = 0;                  // scroll position wanted, 0..1 of the section
+  var shown = 0;                   // smoothed scroll position: drives everything
   var drawnImg = null;             // image currently on the canvas
   var sizeDirty = true;
   var rafId = 0;
@@ -135,7 +158,7 @@
       var w = 64, h = 36;
       var c = document.createElement('canvas');
       c.width = w; c.height = h;
-      var x = c.getContext('2d');
+      var x = c.getContext('2d', { willReadFrequently: true });
       x.drawImage(img, 0, 0, w, h);
       var avg = function (y) {
         var d = x.getImageData(0, y, w, 1).data, r = 0, g = 0, b = 0;
@@ -160,7 +183,7 @@
     loadFrame(0).then(function (ok) {
       if (!ok) { broken = true; return sync(); }
       sampleBackdrop(frames[0]);
-      var here = Math.round(target);
+      var here = Math.round(frameAt(target));
       if (here > 0) loadFrame(here);
       requestTick();
     });
@@ -174,15 +197,28 @@
 
   /* ---------- Scroll and drawing ---------- */
 
-  function progress() {
+  // Positions are measured only when sizes change (measure()), never while
+  // scrolling: the per-frame path is arithmetic on window.scrollY, so the
+  // scroll, the frames and the callouts never force a layout.
+  var M = { top: 0, range: 1, anchors: [] };
+  function measure() {
+    var y = window.scrollY;
     var rect = section.getBoundingClientRect();
-    var range = rect.height - stage.offsetHeight;
-    return range > 0 ? -rect.top / range : 0;
+    M.top = rect.top + y;
+    M.range = Math.max(1, rect.height - stage.offsetHeight);
+    M.anchors = anchors.map(function (el) {
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { el: el, top: r.top + y, bottom: r.bottom + y };
+    });
+  }
+
+  function progress() {
+    return (window.scrollY - M.top) / M.range;
   }
 
   function readScroll() {
-    var p = Math.min(1, Math.max(0, progress() / PLAY_SHARE));
-    target = p * (COUNT - 1);
+    target = clamp01(progress());
   }
 
   // Nearest loaded frame to i, searching outward.
@@ -257,7 +293,25 @@
       section.style.setProperty('--img-h', dh / dpr + 'px');
       section.style.setProperty('--fade-h', fade / dpr + 'px');
       section.style.setProperty('--fade-on', dy > 0 ? '1' : '0');
+      if (window.palperaCallouts) {
+        window.palperaCallouts.layout(canvas.clientWidth, dy / dpr, dh / dpr, canvas.clientHeight);
+      }
     }
+  }
+
+  var controls = section.querySelector('.carousel-controls');
+  var controlsT = -1;
+  function setControls(t) {
+    if (!controls || t === controlsT) return;
+    controlsT = t;
+    controls.style.opacity = t;
+    controls.style.transform = 'translate(-50%,' + ((1 - t) * 12).toFixed(2) + 'px)';
+    controls.style.visibility = t > 0 ? 'visible' : 'hidden';
+  }
+  function clearControls() {
+    if (!controls) return;
+    controlsT = -1;
+    controls.style.opacity = controls.style.transform = controls.style.visibility = '';
   }
 
   function setAtEnd(value) {
@@ -275,19 +329,32 @@
 
     var k = 1 - Math.pow(1 - EASE, dt / 16.7);
     shown += (target - shown) * k;
-    if (Math.abs(target - shown) < 0.01) shown = target;
+    // Snap once within a tenth of a pixel of scroll.
+    if (Math.abs(target - shown) * M.range < 0.1) shown = target;
 
     if (sizeDirty) { resizeCanvas(); drawnImg = null; }
 
-    var index = Math.round(shown);
+    var index = Math.round(frameAt(shown));
     var img = nearestLoaded(index);
     if (img && img !== drawnImg) draw(img);
 
     // Hand over only when the real last frame is actually on the canvas
     // (or when a keyboard visitor jumped here: the violet carousel still is
     // the same picture, so it can stand in until the frame arrives).
-    setAtEnd(index === COUNT - 1 && (img === frames[COUNT - 1] || keyboardJump));
+    var fadeT = clamp01((shown - phase.fade[0]) / (phase.fade[1] - phase.fade[0]));
+    setAtEnd(index === COUNT - 1 && fadeT >= 0.5 &&
+             (img === frames[COUNT - 1] || keyboardJump));
     if (index !== COUNT - 1) keyboardJump = false;
+
+    // Callouts and carousel controls follow the same smoothed value, so they
+    // scrub backwards exactly as they play forwards. Opacity and transform
+    // only (see callouts.js).
+    if (window.palperaCallouts) {
+      window.palperaCallouts.update(
+        clamp01((shown - phase.callouts[0]) / Math.max(1e-6, phase.callouts[1] - phase.callouts[0])),
+        1 - fadeT);
+    }
+    setControls(fadeT);
 
     if (shown !== target) {
       requestTick();
@@ -324,7 +391,7 @@
   function endScrollY() {
     var rect = section.getBoundingClientRect();
     var range = rect.height - stage.offsetHeight;
-    return window.scrollY + rect.top + range * (PLAY_SHARE + (1 - PLAY_SHARE) / 2);
+    return window.scrollY + rect.top + range * phase.carouselMid;
   }
 
   /* ---------- Switching between the scroll and static versions ---------- */
@@ -336,6 +403,7 @@
     section.addEventListener('focusin', onFocusIn);
     sizeDirty = true;
     drawnImg = null;
+    measure();
     readScroll();
     shown = target;   // no easing after a reload or a switch
     startLoading();
@@ -349,9 +417,21 @@
     section.removeEventListener('focusin', onFocusIn);
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
     setAtEnd(false);
+    clearControls();
   }
 
-  // The scroll version's height depends on the window height (420vh) and the
+  // callouts.js loads the spec data after this script starts; the scroll
+  // length depends on how many callouts there are, so re-measure then.
+  document.addEventListener('callouts:ready', function () {
+    var anchor = captureAnchor();
+    computePhases();
+    geometry = '';
+    drawnImg = null;
+    measure();
+    if (active) { restoreAnchor(anchor); measure(); readScroll(); shown = target; requestTick(); }
+  });
+
+  // The scroll version's height depends on the window height (see VH) and the
   // two versions differ hugely in height, so a resize would otherwise drop
   // the visitor somewhere else on the page. What is at the top of the window
   // is noted on every scroll (by the time a resize event arrives the layout
@@ -359,16 +439,16 @@
   var anchors = [section.ownerDocument.querySelector('.hero'), section]
     .concat(Array.prototype.slice.call(document.querySelectorAll('main > section, .site-footer')));
 
+  // From the cached positions, so it is cheap enough to run on every scroll.
   function captureAnchor() {
     if (active) {
       var p = progress();
       if (p < 1) return { seq: p };        // still inside the pinned stage
     }
-    for (var i = 0; i < anchors.length; i++) {
-      var el = anchors[i];
-      if (!el) continue;
-      var r = el.getBoundingClientRect();
-      if (r.bottom > 1) return { el: el, top: r.top };
+    var y = window.scrollY;
+    for (var i = 0; i < M.anchors.length; i++) {
+      var a = M.anchors[i];
+      if (a && a.bottom - y > 1) return { el: a.el, top: a.top - y };
     }
     return null;
   }
@@ -417,7 +497,9 @@
     var want = wanted();
     if (want !== active) { if (want) enable(); else disable(); }
     restoring = true;
+    measure();
     restoreAnchor(anchor);
+    measure();
     lastAnchor = captureAnchor();
     restoring = false;
     sizeDirty = true;
@@ -431,6 +513,9 @@
 
   if ('ResizeObserver' in window) {
     new ResizeObserver(function () { sizeDirty = true; requestTick(); }).observe(canvas);
+    // Page height changes without a window resize (web fonts arriving, the
+    // spec list filling in): re-measure. Fires on size changes only.
+    new ResizeObserver(function () { measure(); readScroll(); requestTick(); }).observe(document.body);
   }
 
   // The inline script in <head> already chose the version before first

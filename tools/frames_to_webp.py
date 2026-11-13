@@ -9,6 +9,7 @@ PALPERA_SHOTS=sequence,colours, containing:
     sequence/frame_0001.png ...      -> assets/sequence/frame_0001.webp ...
     sequence/hero_stack.png          -> assets/hero/stack.webp (cropped to the pods)
     colours/<colour>.png             -> assets/colours/<colour>.webp
+    anchors.json                     -> data/anchors.json (callout positions)
 
 The violet carousel still is written from the LAST sequence frame, so the
 handover from the scroll sequence to the carousel is pixel identical by
@@ -154,6 +155,16 @@ def main():
             print("missing", src)
             continue
         total["colours"] += save(im, os.path.join(site, "assets", "colours", c + ".webp"), a.quality, a.watermark)
+
+    # Callout positions for this render (written by palpera_pod.py).
+    anchors = os.path.join(a.renders, "anchors.json")
+    if os.path.exists(anchors):
+        os.makedirs(os.path.join(site, "data"), exist_ok=True)
+        with open(anchors) as src, open(os.path.join(site, "data", "anchors.json"), "w") as dst:
+            dst.write(src.read())
+        print("anchors: copied to data/anchors.json")
+    elif frames:
+        print("note: no anchors.json in the renders; data/anchors.json left as it was")
 
     print("colours: %.2f MB, hero: %.2f MB" % (total["colours"] / 1e6, total["hero"] / 1e6))
     print("total: %.2f MB" % (sum(total.values()) / 1e6))

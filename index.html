@@ -25,6 +25,7 @@
       document.documentElement.classList.add('js');
     })();
   </script>
+  <script src="js/callouts.js" defer></script>
   <script src="js/sequence.js" defer></script>
   <script src="js/carousel.js" defer></script>
   <script src="js/signup.js" defer></script>
@@ -87,6 +88,18 @@
         <div class="stage">
           <canvas class="stage-canvas" aria-hidden="true"></canvas>
 
+          <!-- Callouts on the held last frame (desktop). Built by callouts.js
+               from data/specs.json and data/anchors.json. -->
+          <div class="callouts" data-callouts>
+            <svg class="co-lines" aria-hidden="true" focusable="false"></svg>
+            <div class="co-rings" data-callout-rings aria-hidden="true"></div>
+            <div class="co-labels" data-callout-labels></div>
+            <div class="co-intro" data-callout-heading>
+              <h2 class="co-title">What is in <em>the pod.</em></h2>
+              <p>One sensor, one battery and a clip. Nothing else to wear.</p>
+            </div>
+          </div>
+
           <div class="carousel" data-carousel tabindex="0" role="group"
                aria-roledescription="carousel" aria-label="Pod colours. Use the left and right arrow keys to change colour.">
             <div class="carousel-view" data-carousel-view>
@@ -121,11 +134,26 @@
           </div>
 
           <p class="render-label stage-label">Concept render</p>
+
+          <!-- The same callouts as a plain list (phones, reduced motion). -->
+          <div class="callout-static">
+            <h2 class="co-title">What is in <em>the pod.</em></h2>
+            <p>One sensor, one battery and a clip. Nothing else to wear.</p>
+            <dl class="spec-list" data-callout-list></dl>
+          </div>
         </div>
       </section>
     </div>
 
-    <section class="band band-alt reasons" aria-labelledby="reasons-title">
+    <!-- The other specs (brief 6.7), from data/specs.json. -->
+    <section class="band band-alt specs" data-specs aria-labelledby="specs-title">
+      <div class="wrap">
+        <h2 id="specs-title" class="visually-hidden">Specifications</h2>
+        <dl class="spec-list" data-spec-list></dl>
+      </div>
+    </section>
+
+    <section class="band reasons" aria-labelledby="reasons-title">
       <div class="wrap">
         <h2 id="reasons-title" class="visually-hidden">Why Palpera</h2>
         <ul class="reason-list">
@@ -159,7 +187,7 @@
       </div>
     </section>
 
-    <section class="band how" id="how" aria-labelledby="how-title">
+    <section class="band band-alt how" id="how" aria-labelledby="how-title">
       <div class="wrap">
         <h2 id="how-title">How it works</h2>
         <ol class="steps">
@@ -182,7 +210,7 @@
       </div>
     </section>
 
-    <section class="band band-alt where" id="where" aria-labelledby="where-title">
+    <section class="band where" id="where" aria-labelledby="where-title">
       <div class="wrap narrow">
         <h2 id="where-title">Where we are</h2>
         <p>Palpera is in early development. The first prototypes are being built and tested now, and nothing is for sale yet.</p>

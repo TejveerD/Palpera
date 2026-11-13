@@ -15,6 +15,10 @@
 #                    extra shots for the website, only when named here:
 #                    sequence (150-frame scroll animation), colours (five stills)
 #   PALPERA_VIDEO    auto | 1 | 0         (1 = write an .mp4, 0 = numbered frames)
+#   PALPERA_WORLD / PALPERA_FLOOR / PALPERA_FRAME   sRGB hex colours for the
+#                    studio wall, the floor and the glasses frame
+#   PALPERA_COLOURS  comma list limiting which pod colours the colours shot renders
+#   PALPERA_SEQ_SCALE  1 | 2 | 3  sequence frame multiplier (2 = 299 frames)
 
 import bpy
 import bmesh
@@ -39,11 +43,20 @@ ANIM_FRAMES = 96          # 4 seconds at 24 fps
 # website scroll sequence: (frame size, samples, frame step)
 SEQ_TIERS = {
     "preview": ((480, 270), 8, 3),
-    "draft":   ((960, 540), 24, 1),
+    "draft":   ((1440, 810), 32, 1),
     "final":   ((1600, 900), 96, 1),
 }
 SEQ_RES, SEQ_SAMPLES, SEQ_STEP = SEQ_TIERS.get(QUALITY, SEQ_TIERS["final"])
 SEQ_FRAMES = 150
+# Render 2x or 3x as many in-between frames for a smoother scrub, same motion.
+SEQ_SCALE = max(1, int(os.environ.get("PALPERA_SEQ_SCALE", "1")))
+
+
+def seq_f(f):
+    return 1 + (f - 1) * SEQ_SCALE
+
+
+SEQ_LAST = seq_f(SEQ_FRAMES)
 # Write a video directly when run inside the Blender app; as a Python module
 # (no app binary) write numbered frames instead and encode them separately.
 _video = os.environ.get("PALPERA_VIDEO", "auto")     # auto | 1 | 0
@@ -59,7 +72,9 @@ COLOURS = {            # brand pod colours (sRGB hex)
     "silver":   "C9CCD3",
     "sand":     "D8C7A8",
 }
-WORLD = "CFC9E0"        # studio wall colour; the floor picks it up from the light
+WORLD = os.environ.get("PALPERA_WORLD", "CFC9E0")   # studio wall colour (sRGB hex)
+FLOOR = os.environ.get("PALPERA_FLOOR", "F5F5F5")   # floor; near-white picks up the wall colour
+FRAME = os.environ.get("PALPERA_FRAME", "141316")   # glasses frame colour
 
 
 # ----------------------------------------------------------------- helpers
@@ -256,12 +271,12 @@ scene = bpy.context.scene
 
 # ---------------------------------------------------------------- materials
 
-M_ACETATE = principled("Acetate", hex_rgba("141316"), rough=0.12, coat=0.6)
+M_ACETATE = principled("Acetate", hex_rgba(FRAME), rough=0.12, coat=0.6)
 M_LENS = principled("Lens", (1, 1, 1, 1), rough=0.0, transmission=1.0, ior=1.5)
 M_SENSOR = principled("SensorWindow", hex_rgba("1A0B0B"), rough=0.05, coat=1.0)
 M_PORT = principled("Port", hex_rgba("0C0C0E"), rough=0.35, metallic=0.6)
 M_PLA = principled("PrintedPLA", hex_rgba("B9BBC0"), rough=0.62)
-M_FLOOR = principled("Floor", (0.96, 0.96, 0.96, 1.0), rough=1.0)
+M_FLOOR = principled("Floor", hex_rgba(FLOOR), rough=1.0)
 M_CAP = principled("PodCap", hex_rgba("17151C"), rough=0.08, coat=1.0)
 M_POD = {}
 for cname, chex in COLOURS.items():
@@ -543,7 +558,7 @@ HERO_CAM_TARGET = Vector((1.6, 3.4, -0.4))
 def key(ob, path, frame, value=None):
     if value is not None:
         setattr(ob, path, value)
-    ob.keyframe_insert(data_path=path, frame=frame)
+    ob.keyframe_insert(data_path=path, frame=seq_f(frame))
 
 
 def build_web_sequence():
@@ -627,6 +642,36 @@ def set_pod_colour(cname):
             mats[0] = M_POD[cname]
 
 
+# Points on the pod that the page's callouts point at, in the pod's own space.
+ANCHOR_POINTS = {
+    "sensor":    (-1.92, -2.14, -1.26),   # infrared sensor head
+    "clip":      (-0.46, -1.25, 0.42),    # front clip, where it grips the temple
+    "pod_top":   (0.20, 0.30, 0.575),     # top edge of the body
+    "pod_rear":  (0.31, 1.75, -0.15),     # outer face, rear end
+    "pod_front": (0.31, -1.80, 0.0),      # dark front cap
+}
+
+
+def write_anchors(cam):
+    """Saves where each anchor lands in the last sequence frame (anchors.json).
+
+    x and y are fractions of the frame, measured from the top left corner, so
+    the page can place callouts without anyone measuring a render by hand."""
+    import json
+    from bpy_extras.object_utils import world_to_camera_view
+    scene.frame_set(SEQ_LAST)
+    bpy.context.view_layer.update()
+    out = {"frame": SEQ_LAST, "frame_size": list(SEQ_RES), "anchors": {}}
+    for name, local in ANCHOR_POINTS.items():
+        v = world_to_camera_view(scene, cam, POD_ROOT.matrix_world @ Vector(local))
+        out["anchors"][name] = {"x": round(v.x, 4), "y": round(1.0 - v.y, 4)}
+    os.makedirs(OUT, exist_ok=True)
+    path = os.path.join(OUT, "anchors.json")
+    with open(path, "w") as fh:
+        json.dump(out, fh, indent=2)
+    print("Palpera: wrote", path)
+
+
 def render_web(do_sequence, do_colours):
     import shutil
     cam, animated = build_web_sequence()
@@ -635,7 +680,7 @@ def render_web(do_sequence, do_colours):
     for ob in list(LINEUP_ROOTS["violet"].children_recursive):
         ob.hide_render = True
     scene.camera = cam
-    scene.frame_start, scene.frame_end = 1, SEQ_FRAMES
+    scene.frame_start, scene.frame_end = 1, SEQ_LAST
     r.resolution_x, r.resolution_y = SEQ_RES
     r.resolution_percentage = 100
     scene.cycles.samples = SEQ_SAMPLES
@@ -644,12 +689,14 @@ def render_web(do_sequence, do_colours):
     r.image_settings.file_format = "PNG"
     r.image_settings.color_mode = "RGB"
     r.film_transparent = False
+    write_anchors(cam)
 
     if do_colours:
         col_dir = os.path.join(OUT, "colours")
         os.makedirs(col_dir, exist_ok=True)
-        scene.frame_set(SEQ_FRAMES)
-        for cname in LINEUP_ORDER:
+        scene.frame_set(SEQ_LAST)
+        wanted = os.environ.get("PALPERA_COLOURS", ",".join(LINEUP_ORDER)).split(",")
+        for cname in [c for c in LINEUP_ORDER if c in wanted]:
             set_pod_colour(cname)
             r.filepath = os.path.join(col_dir, cname + ".png")
             bpy.ops.render.render(write_still=True)
@@ -659,14 +706,14 @@ def render_web(do_sequence, do_colours):
     if do_sequence:
         seq_dir = os.path.join(OUT, "sequence")
         os.makedirs(seq_dir, exist_ok=True)
-        frames = list(range(1, SEQ_FRAMES + 1, SEQ_STEP))
-        if frames[-1] != SEQ_FRAMES:
-            frames.append(SEQ_FRAMES)
+        frames = list(range(1, SEQ_LAST + 1, SEQ_STEP))
+        if frames[-1] != SEQ_LAST:
+            frames.append(SEQ_LAST)
         for f in frames:
             scene.frame_set(f)
             r.filepath = os.path.join(seq_dir, "frame_%04d.png" % f)
             bpy.ops.render.render(write_still=True)
-            print("Palpera: sequence frame %d of %d" % (f, SEQ_FRAMES))
+            print("Palpera: sequence frame %d of %d" % (f, SEQ_LAST))
         shutil.copyfile(os.path.join(seq_dir, "frame_0001.png"),
                         os.path.join(seq_dir, "hero_stack.png"))
         print("Palpera: wrote sequence to", seq_dir)
