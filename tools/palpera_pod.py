@@ -659,7 +659,11 @@ def build_web_sequence():
     away = (stack_pos - LINEUP_CAM_POS).normalized()
     others = [c for c in LINEUP_ORDER if c != "violet"]
     merge_start, merge_end = 6, 34          # story frames
-    shrink = (32, 38)                       # only once hidden behind violet
+    # Shrink toward each pod's own centre over the last part of the slide.
+    # Shrinking only after arrival left the thin sensor arms poking out past
+    # violet's arm for a few frames; shrinking on the way in pulls them in
+    # behind violet's body before the merge ends.
+    shrink = (20, 34)
 
     def pose(f):
         s = span(f, merge_start, merge_end)

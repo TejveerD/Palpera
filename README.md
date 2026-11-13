@@ -31,23 +31,21 @@ Formspree's free plan (checked November 2026): 50 submissions a month, and submi
 
 ## Rendering the sequence and colour stills
 
-`tools/palpera_pod.py` builds the scene and contains both website shots (`sequence`, 150 frames, and `colours`, five stills taken from the last sequence frame with the pod colour swapped). It must be in `tools/` before any rendering.
+`tools/palpera_pod.py` builds the scene and renders both website shots: `sequence` (299 frames by default, `PALPERA_SEQ_SCALE=2`) and `colours` (five stills taken from the last sequence frame with the pod colour swapped). It writes WebP directly (about 25 KB a frame) and `anchors.json` (callout positions). Each object follows one smooth, baked curve; the four other pods close up along their row behind violet.
 
-Windows:
+On TJ's laptop (script in `C:\Users\tejve\Palpera`, about 20 to 25 minutes on the RTX card):
 
 ```
-set PALPERA_OUT=C:\palpera\renders
-set PALPERA_QUALITY=final
-set PALPERA_SHOTS=sequence,colours
-"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P tools\palpera_pod.py
-python tools\frames_to_webp.py C:\palpera\renders
+set PALPERA_OUT=%CD%\renders&& set PALPERA_QUALITY=final&& set PALPERA_SHOTS=sequence,colours&& "C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P palpera_pod.py
 ```
 
-Use `PALPERA_QUALITY=preview` first for a fast low-resolution check of the motion. Never pass `--watermark` for these renders.
+Upload everything in `renders\sequence`, `renders\colours` and `renders\anchors.json` to the repo (GitHub web upload, up to 100 files per batch). Then, in the repo:
 
-`frames_to_webp.py` writes `assets/sequence/`, `assets/hero/stack.webp` and `assets/colours/`. It reports how far `colours/violet.png` differs from the last sequence frame (it should be about zero) and prints the total size; the budget is under 10 MB for the sequence. If the frame count changes, update `data-frames` on the `.sequence` section in `index.html`.
+```
+python tools/frames_to_webp.py <folder with sequence/, colours/, anchors.json>
+```
 
-The frames carry their own lavender studio backdrop. On load, `sequence.js` samples the top and bottom edge colours of frame 1 and paints the stage with them, and the bottom of the stage fades into the band below. In the hero, muted text and the accent are darkened (`#4A4462`, `#4A31A6`) so they stay above 4.5:1 on the backdrop.
+This copies the frames into `assets/sequence/` (WebP at 1600 px is copied as is, not recompressed), crops the phone hero still, copies `anchors.json` to `data/`, sets `data-frames` in `index.html`, checks that the violet still matches the last frame, and prints the total size (budget: under 10 MB). Use `PALPERA_QUALITY=preview` for a quick low-resolution look at the motion. Never pass `--watermark` for real renders.
 
 ## Editing specs
 
