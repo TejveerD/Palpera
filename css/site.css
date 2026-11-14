@@ -1,31 +1,44 @@
-/* Palpera coming-soon page. Direction D, Lilac dusk palette. */
+/* Palpera, fluted-glass redesign (palpera-fluted-redesign.md). */
+
+/* Self-hosted font (SIL Open Font License; licence in fonts/). Served from
+   this site so no visitor data goes to Google or anyone else. */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/bricolage-grotesque-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/bricolage-grotesque-latin-500-normal.woff2") format("woff2");
+}
 
 :root {
-  --ground: #F9F8FC;
-  --band: #F0EDF8;
-  --tint: #E3DDF6;
-  --placeholder: #ECE8F5;
-  --ink: #1E1A2E;
-  --muted: #575170;
-  --accent: #5A3FC0;
-  --line: #9C8AE0;
-  --sensor: #E0A458;
-  --dark: #2A1F5C;
-  --on-dark-btn: #CFC3FA;
-  --input-border: #B5AFCB;
+  /* Tokens (spec section 3) */
+  --ink: #12302A;         /* text, callout lines, primary button fill */
+  --muted: #24443C;       /* muted text, concept-render label, field labels */
+  --edge: #4E6F66;        /* input border */
+  --light: #F4F7F5;       /* input fill, button text, light sections */
+  --card: #FBFCFB;        /* card surface */
+  --hairline: #D5DED9;    /* hairline on light surfaces (decorative) */
+  --ground: #C5D3CC;      /* page ground; the stage samples its own from the frames */
+  --error: #8E2A22;
 
-  --serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-  --sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
-
+  --sans: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 4px;
   --wrap: 72rem;
   --gutter: clamp(1rem, 4vw, 2.5rem);
-  --radius-pill: 999px;
-  --header-h: 4.5rem;
 
-  /* Scroll length of the sequence. Tune by feel (brief: 350 to 450 vh). */
-  /* Set by sequence.js from its phase budget (frames + callouts + carousel);
-     this is the value for four callouts. */
-  --seq-length: 735vh;
+  /* The mock-ups are drawn at 1440 px wide; desktop positions scale with
+     the window width from there. */
+  --u: calc(100vw / 1440);
+
+  /* Set by sequence.js from its phase budget. */
+  --seq-length: 800vh;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -38,29 +51,21 @@ body {
   background: var(--ground);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 1.0625rem;
-  line-height: 1.6;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 img, svg, canvas { display: block; max-width: 100%; }
 
-h1, h2, h3 {
-  font-family: var(--serif);
-  font-weight: 500;
-  line-height: 1.08;
-  margin: 0 0 0.5em;
-  letter-spacing: -0.005em;
-}
-h1 em, h2 em { font-style: italic; }
-h1 { font-size: clamp(2.75rem, 5.4vw, 4.75rem); }
-h2 { font-size: clamp(2rem, 3.6vw, 3rem); }
-h3 { font-size: 1.6rem; }
+h1, h2, h3 { font-weight: 500; line-height: 1.15; margin: 0 0 0.5em; }
+h2 { font-size: clamp(28px, 3vw, 40px); }
+h3 { font-size: 20px; line-height: 1.3; }
 p { margin: 0 0 1em; }
 
-a { color: var(--accent); text-underline-offset: 0.18em; }
-
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+a { color: var(--ink); text-underline-offset: 0.18em; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: var(--radius); }
 
 .wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
 .narrow { max-width: 44rem; }
@@ -71,103 +76,80 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 }
 
 .skip {
-  position: absolute; left: 1rem; top: -4rem; z-index: 100;
-  background: var(--ink); color: var(--ground); padding: 0.6rem 1rem; border-radius: var(--radius-pill);
-  text-decoration: none;
+  position: fixed; left: 1rem; top: -4rem; z-index: 100;
+  background: var(--light); color: var(--ink); padding: 0.6rem 1rem; border-radius: var(--radius);
+  text-decoration: none; font-size: 14px;
 }
-.skip:focus { top: 1rem; }
+.skip:focus { top: 0.75rem; }
 
-/* ---------- Buttons and inputs (pill shaped) ---------- */
+/* ---------- Buttons and inputs (4 px corners) ---------- */
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: 3rem; padding: 0 1.5rem;
-  border: 0; border-radius: var(--radius-pill);
-  background: var(--accent); color: #fff;
-  font: 600 1rem/1 var(--sans); text-decoration: none; white-space: nowrap;
+  min-height: 48px; padding: 0 1.25rem;
+  border: 0; border-radius: var(--radius);
+  background: var(--ink); color: var(--light);
+  font: 500 16px/1 var(--sans); text-decoration: none; white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
 }
-.btn:hover { background: #4B33A8; }
-.btn:active { transform: translateY(1px); }
+.btn:hover { background: #1C4339; }
 .btn[disabled] { opacity: 0.6; cursor: progress; }
-.btn-small { min-height: 2.5rem; padding: 0 1.15rem; font-size: 0.95rem; }
 
 .input {
-  flex: 1 1 14rem; min-width: 0; min-height: 3rem; padding: 0 1.25rem;
-  border: 1px solid var(--input-border); border-radius: var(--radius-pill);
-  background: #fff; color: var(--ink);
-  font: 400 1rem/1 var(--sans);
+  flex: 1 1 12rem; min-width: 0; min-height: 48px; padding: 0 0.9rem;
+  border: 1px solid var(--edge); border-radius: var(--radius);
+  background: var(--light); color: var(--ink);
+  font: 400 16px/1 var(--sans);
 }
-.input::placeholder { color: var(--muted); opacity: 0.85; }
-.input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
-.input[aria-invalid="true"] { border-color: #A3302A; }
+.input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.input[aria-invalid="true"] { border-color: var(--error); }
 
-/* ---------- Header ---------- */
+/* ---------- Signup and consent ---------- */
 
-.site-header { position: relative; z-index: 10; }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: var(--header-h); }
-
-.wordmark { display: inline-flex; flex-direction: column; align-items: center; color: var(--ink); text-decoration: none; }
-.wordmark-text { font-family: var(--serif); font-weight: 500; font-size: 1.85rem; line-height: 1; letter-spacing: 0.01em; }
-.wordmark-lid { width: 3.4rem; height: 0.5rem; margin-top: 0.15rem; overflow: visible; }
-.wordmark-lid path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-
-.site-nav { display: flex; align-items: center; gap: clamp(0.75rem, 2.5vw, 2rem); }
-.site-nav a:not(.btn) { color: var(--ink); text-decoration: none; font-weight: 500; font-size: 0.98rem; }
-.site-nav a:not(.btn):hover { color: var(--accent); }
-@media (max-width: 559px) { .site-nav a:not(.btn) { display: none; } }
-
-/* ---------- Hero ---------- */
-
-.hero { padding: clamp(1.5rem, 5vw, 4rem) 0 2rem; }
-.hero-inner { display: grid; gap: 2.5rem; align-items: center; }
-@media (min-width: 900px) { .hero-inner { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
-
-.eyebrow {
-  display: inline-block; margin-bottom: 1.1rem;
-  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--accent);
+.signup { max-width: 34rem; }
+.signup-label { display: block; margin-bottom: 0.4rem; font-size: 14px; color: var(--muted); }
+.signup-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.consent {
+  display: flex; align-items: flex-start; gap: 0.6rem; margin-top: 0.75rem;
+  font-size: 14px; line-height: 1.45; color: var(--ink);
 }
-.lede { font-size: 1.15rem; color: var(--muted); max-width: 32rem; }
-
-.hero-figure { position: relative; margin: 0; }
-.hero-figure img { width: 100%; height: auto; border-radius: 1.25rem; background: var(--placeholder); }
-
-.render-label {
-  margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted);
-}
-.hero-figure .render-label { margin-top: 0.5rem; text-align: right; }
-
-/* ---------- Signup ---------- */
-
-.signup { margin-top: 2rem; max-width: 30rem; }
-.signup-label { display: block; margin-bottom: 0.6rem; font-weight: 500; }
-.signup-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-.signup-status { min-height: 1.6em; margin: 0.7rem 0 0; font-size: 0.95rem; }
-.signup-status.is-ok { color: var(--accent); font-weight: 500; }
-.signup-status.is-error { color: #A3302A; }
+.consent input { width: 18px; height: 18px; margin: 0.1rem 0 0; flex: none; accent-color: var(--ink); cursor: pointer; }
+.consent label { cursor: pointer; }
+.consent input[aria-invalid="true"] { outline: 2px solid var(--error); outline-offset: 2px; }
+.consent-error { margin: 0.35rem 0 0 calc(18px + 0.6rem); font-size: 14px; color: var(--error); }
+.consent-error:empty { display: none; }
+.signup-status { margin: 0.5rem 0 0; font-size: 14px; }
+.signup-status:empty { display: none; }
+.signup-status.is-ok { font-weight: 500; }
+.signup-status.is-error { color: var(--error); }
 .gotcha { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.small-print { margin: 0.5rem 0 0; font-size: 12px; color: var(--muted); }
 
-.signup-dark .btn { background: var(--on-dark-btn); color: var(--ink); }
-.signup-dark .btn:hover { background: #DDD4FC; }
-.signup-dark .input { border-color: var(--on-dark-btn); }
-.signup-dark .input:focus-visible { outline-color: var(--on-dark-btn); border-color: var(--on-dark-btn); }
-.signup-dark .signup-status.is-ok { color: var(--on-dark-btn); }
-.signup-dark .signup-status.is-error { color: #FFC9C4; }
-.band-dark :focus-visible { outline-color: var(--on-dark-btn); }
+/* ---------- Static version: phones and reduced motion (spec section 8) ---------- */
 
-/* ---------- Sequence stage and carousel: static version (default) ---------- */
+.stage { position: relative; }
+.stage-canvas, .statement, .callouts { display: none; }
 
-.sequence { padding: 1rem 0 clamp(3rem, 7vw, 5rem); }
-.stage { position: relative; width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
-.stage-canvas { display: none; }
+.top { display: flex; justify-content: center; padding: 1.25rem var(--gutter) 1rem; }
+.brand { font-size: 24px; font-weight: 500; line-height: 1; color: var(--ink); text-decoration: none; }
+.top-nav { display: none; }
+.top-link[hidden] { display: none; }
 
-.carousel { position: relative; border-radius: 1.25rem; }
-.carousel:focus-visible { outline-offset: 6px; }
+.hero-still { margin: 0; }
+.hero-still img { width: 100%; height: auto; }
+.hero-still .render-label { padding: 0.4rem var(--gutter) 0; text-align: right; }
+.hero-block { padding: 2rem var(--gutter) 3rem; }
+.headline { margin: 0 0 1rem; font-size: clamp(34px, 9vw, 48px); line-height: 1.1; font-weight: 500; }
+.hero-text { max-width: 480px; color: var(--muted); }
+.hero-block .signup { margin-top: 1.5rem; }
+
+.render-label { margin: 0; font-size: 10px; line-height: 1.3; color: var(--muted); }
+
+.carousel { position: relative; padding: 0 var(--gutter); }
+.carousel:focus-visible { outline-offset: -4px; }
 .carousel-view {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden;
-  border-radius: 1.25rem; background: var(--placeholder);
+  border-radius: var(--radius); background: var(--ground);
   touch-action: pan-y; overscroll-behavior-x: contain;
   user-select: none; -webkit-user-select: none;
 }
@@ -180,243 +162,238 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 .carousel-img.is-active { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .carousel-img { transition-duration: 0.01ms; } }
 
-.carousel-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; }
+.carousel-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
 .arrow {
-  display: grid; place-items: center; width: 2.75rem; height: 2.75rem;
-  border: 1px solid var(--input-border); border-radius: var(--radius-pill);
-  background: var(--ground); color: var(--ink); cursor: pointer;
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border: 1px solid var(--edge); border-radius: var(--radius);
+  background: var(--light); color: var(--ink); cursor: pointer;
 }
-.arrow:hover { border-color: var(--accent); color: var(--accent); }
-.arrow svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.arrow:hover { border-color: var(--ink); }
+.arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
-.dots { display: flex; gap: 0.35rem; }
+.dots { display: flex; gap: 0.25rem; }
 .dot {
-  position: relative; width: 2.75rem; height: 2.75rem; padding: 0;
-  border: 0; border-radius: var(--radius-pill); background: transparent; cursor: pointer;
+  position: relative; width: 44px; height: 44px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; cursor: pointer;
 }
 .dot::before {
-  content: ""; position: absolute; inset: 0.8rem; border-radius: 50%;
-  background: var(--c); box-shadow: inset 0 0 0 1px rgba(30, 26, 46, 0.18);
-  transition: transform 0.2s ease;
+  content: ""; position: absolute; inset: 13px; border-radius: 50%;
+  background: var(--c); box-shadow: inset 0 0 0 1px rgba(18, 48, 42, 0.25);
 }
 .dot::after {
-  content: ""; position: absolute; inset: 0.45rem; border-radius: 50%;
-  border: 1.5px solid transparent; transition: border-color 0.2s ease;
+  content: ""; position: absolute; inset: 7px; border-radius: 50%;
+  border: 1px solid transparent; transition: border-color 0.2s ease;
 }
-.dot:hover::before { transform: scale(1.1); }
 .dot[aria-pressed="true"]::after { border-color: var(--ink); }
 
-.stage-label { margin-top: 0.6rem; text-align: right; }
+.stage-label { padding: 0.4rem var(--gutter) 0; text-align: right; }
 
-/* ---------- Sequence: desktop scroll version (html.seq) ---------- */
+.callout-static { padding: 2.5rem var(--gutter) 3rem; }
+.callout-static > p { color: var(--muted); }
+.co-title { font-size: clamp(28px, 7vw, 40px); }
 
-.seq .site-header { position: absolute; top: 0; left: 0; right: 0; }
-.seq .intro { position: relative; }
-.seq .hero {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
-  height: 100vh; min-height: 36rem; padding: var(--header-h) 0 0;
-  display: flex; align-items: center;
-  pointer-events: none;
-}
-.seq .hero-inner { width: 100%; grid-template-columns: minmax(0, 1fr); }
-.seq .hero-copy { max-width: min(27rem, 42vw); pointer-events: auto; }
-.seq .hero-figure { display: none; }
+/* ---------- Desktop: the pinned stage (html.seq, spec section 4) ---------- */
 
-.seq .sequence { height: var(--seq-length); padding: 0; }
-/* The frames carry their own lavender studio backdrop (about #CFC9E0,
-   lighter toward the floor). sequence.js samples the real edge colours from
-   frame 1 into --stage-top / --stage-bottom; these are the fallbacks. */
-.seq .sequence { --stage-top: #CFC9E0; --stage-bottom: #DCD7EA; }
+.seq .sequence { height: var(--seq-length); --stage-top: var(--ground); --stage-bottom: var(--ground); }
 .seq .stage {
-  position: sticky; top: 0; height: 100vh; min-height: 36rem; max-width: none;
-  padding: 0; overflow: hidden;
-  /* Above and below the frame in tall windows: the frame's edge colours. */
-  background: linear-gradient(var(--stage-top) 50%, var(--stage-bottom) 50%);
+  position: sticky; top: 0; height: 100vh; min-height: 32rem; overflow: hidden;
+  background: var(--stage-bottom);
 }
-/* Soft blend from the frame's floor into the band below, so the stage has
-   no hard bottom edge when it unpins. Sits over canvas and carousel alike,
-   so the handover between them is unaffected. */
-.seq .stage::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22vh;
-  background: linear-gradient(rgba(240, 237, 248, 0), var(--band));
-  pointer-events: none; z-index: 1;
-}
-.seq .carousel-controls, .seq .stage-label { z-index: 2; }
-
-/* Hero text over the lavender frames: darker muted and accent, so they stay
-   above 4.5:1 on the backdrop (#CFC9E0: muted 4.65, accent 4.50 before). */
-.seq .hero { --muted: #4A4462; --accent: #4A31A6; --input-border: #575170; }
-.seq .hero .btn { background: var(--accent); }
-.seq .site-header { --accent: #4A31A6; }
 .seq .stage-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.seq .hero-still, .seq .callout-static { display: none; }
 
-.seq .carousel { position: absolute; inset: 0; border-radius: 0; }
-.seq .carousel:focus-visible { outline-offset: -6px; }
+/* Text sits directly over the frames. hero.js moves it with transform and
+   opacity only, from the smoothed scroll value; it measures on resize only. */
+.seq .hero { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.seq .top { display: block; padding: 0; }
+.seq .brand {
+  position: absolute; left: calc(832 * var(--u)); top: calc(36 * var(--u));
+  font-size: clamp(26px, calc(32 * var(--u)), 44px);   /* hero.js fits it to the column */
+  line-height: 0.9; letter-spacing: -0.01em;
+  transform-origin: 0 0; transform: translate(0px, 0px) scale(1);   /* always a transform */
+  will-change: transform; pointer-events: auto;
+}
+.seq .top-nav {
+  display: flex; gap: clamp(20px, calc(32 * var(--u)), 44px);
+  position: absolute; right: calc(72 * var(--u)); top: calc(18 * var(--u));
+  opacity: 0.001; visibility: hidden; transform: translateY(-4px);
+  will-change: opacity, transform; pointer-events: auto;
+}
+.seq .top-nav:focus-within { opacity: 1 !important; transform: none !important; }
+.seq .top-nav { visibility: visible; }
+.top-link { font-size: 14px; line-height: 24px; color: var(--muted); text-decoration: none; }
+.top-link:hover { text-decoration: underline; }
+/* The end signup, once the hero signup has faded (TJ). */
+.top-cta { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 0.2em; }
+
+.seq .hero-block {
+  position: absolute; left: calc(832 * var(--u)); top: 62vh;   /* hero.js sets top */
+  width: min(calc(536 * var(--u)), 760px); padding: 0;
+  transform: translateY(0px); will-change: opacity, transform; pointer-events: auto;
+}
+.seq .headline { font-size: clamp(36px, calc(48 * var(--u)), 68px); margin-bottom: clamp(12px, calc(16 * var(--u)), 22px); }
+.seq .hero-text { margin-bottom: clamp(16px, calc(24 * var(--u)), 32px); }
+.seq .hero-block .signup { margin-top: 0; max-width: none; }
+
+.seq .statement {
+  display: block; position: absolute; left: calc(928 * var(--u)); top: 80vh;   /* hero.js sets top */
+  width: min(calc(448 * var(--u)), 640px); margin: 0;
+  font-size: clamp(26px, calc(32 * var(--u)), 46px); line-height: 1.2; font-weight: 500;
+  opacity: 0.001; visibility: hidden; transform: translateY(8px); will-change: opacity, transform;
+}
+
+.seq .stage-label {
+  position: absolute; right: calc(72 * var(--u)); bottom: 14px; z-index: 5; padding: 0;
+}
+
+/* Carousel: the same geometry as the canvas (--img-top / --img-h). */
+.seq .carousel { position: absolute; inset: 0; z-index: 2; padding: 0; }
 .seq .carousel-view { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: transparent; }
-/* Same geometry as the canvas in sequence.js: full width, centred
-   vertically; the stage gradient shows above and below in tall windows. */
-.seq .carousel-img { top: var(--img-top, 0); bottom: auto; height: var(--img-h, 100%); object-fit: fill; }
-/* The same edge fades the canvas paints in windows taller than 16:9. */
-.seq .carousel-view::before, .seq .carousel-view::after {
-  content: ""; position: absolute; left: 0; right: 0; height: var(--fade-h, 0);
-  opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
-}
-.seq .carousel-view::before { top: var(--img-top, 0); background: linear-gradient(var(--stage-top), transparent); }
-.seq .carousel-view::after {
-  top: calc(var(--img-top, 0px) + var(--img-h, 0px) - var(--fade-h, 0px));
-  background: linear-gradient(transparent, var(--stage-bottom));
-}
-/* Violet is the last sequence frame, already on the canvas underneath, so
-   its <img> stays hidden and the handover involves no image swap at all.
-   The other colours fade in over the canvas; their edge fades appear with
-   them (the canvas has its own under violet). */
-.seq .sequence .carousel-img[data-colour="violet"] { visibility: hidden; }
-.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::before,
-.seq .sequence.at-end .carousel-view:has(.carousel-img.is-active:not([data-colour="violet"]))::after { opacity: var(--fade-on, 0); }
-@media (prefers-reduced-motion: reduce) { .seq .carousel-view::before, .seq .carousel-view::after { transition: none; } }
-/* Until the last frame is reached, the canvas is what the visitor sees. */
-.seq .carousel-img { visibility: hidden; }
+.seq .carousel-img { top: var(--img-top, 0); bottom: auto; height: var(--img-h, 100%); object-fit: fill; visibility: hidden; }
 .seq .sequence.at-end .carousel-img { visibility: visible; }
-
-/* Opacity and position follow the scroll (sequence.js); no transitions, so
-   they scrub backwards as cleanly as forwards. */
+/* White is the last frame, already on the canvas: no image swap. */
+.seq .sequence .carousel-img[data-colour="white"] { visibility: hidden; }
 .seq .carousel-controls {
   position: absolute; left: 50%; bottom: clamp(1.5rem, 6vh, 3.5rem); margin: 0;
-  transform: translate(-50%, 12px);
-  opacity: 0; visibility: hidden;
+  transform: translate(-50%, 12px); opacity: 0; visibility: hidden;
 }
-.seq .stage-label { position: absolute; right: var(--gutter); bottom: 1rem; margin: 0; }
-
-/* The carousel is not operable until the sequence has finished. */
 .seq .sequence:not(.at-end) .carousel { pointer-events: none; }
 
-/* ---------- Bands ---------- */
+/* ---------- Callouts (spec section 4.4) ---------- */
 
-.band { padding: clamp(4rem, 9vw, 7rem) 0; }
-.band-alt { background: var(--band); }
-.band-dark { background: var(--dark); color: var(--ground); }
-.band-dark h2 { color: var(--ground); }
-
-.reason-list, .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.5rem; }
-@media (min-width: 760px) { .reason-list, .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3rem; } }
-.reason p, .step p { color: var(--muted); }
-
-.icon { width: 4rem; height: 2.5rem; margin-bottom: 1.25rem; overflow: visible; }
-.icon * { fill: none; stroke: var(--line); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.icon .fill { fill: var(--tint); stroke: none; }
-.icon .dot-fill { fill: var(--sensor); stroke: none; }
-
-.how h2 { margin-bottom: 2.5rem; }
-.step-num {
-  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-bottom: 1.25rem;
-  border: 1px solid var(--line); border-radius: 50%;
-  font-family: var(--serif); font-size: 1.4rem; line-height: 1; color: var(--accent);
-}
-
-.where p { font-size: 1.15rem; color: var(--muted); }
-.where p:first-of-type { color: var(--ink); }
-
-.closing h2 { max-width: 30rem; }
-.closing .signup { margin-top: 1.5rem; }
-
-/* ---------- Footer ---------- */
-
-.site-footer { padding: 2.5rem 0; font-size: 0.95rem; color: var(--muted); }
-.footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; }
-.footer-inner p { margin: 0; }
-
-/* ---------- Callouts on the held last frame (brief 6.6, design T1) ---------- */
-
-.callouts { display: none; }
 .seq .callouts {
-  display: block; position: absolute; inset: 0; z-index: 2;
+  display: block; position: absolute; inset: 0; z-index: 3;
   pointer-events: none; opacity: 0; visibility: hidden;
 }
 .co-lines { position: absolute; left: 0; top: 0; overflow: visible; }
-/* Hidden by stroke-dashoffset alone (set to the line's length), with butt
-   ends so nothing shows before it draws. */
 .co-line {
-  fill: none; stroke: var(--ink); stroke-width: 1.25; stroke-linecap: butt; stroke-linejoin: round;
+  fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: butt; stroke-linejoin: round;
   stroke-dashoffset: 10000;
 }
 .co-rings { position: absolute; left: 0; top: 0; }
-.co-ring { position: absolute; left: 0; top: 0; width: 12px; height: 12px; }
+.co-ring { position: absolute; left: 0; top: 0; width: 16px; height: 16px; }
+/* An 8 px radius ring with a 3 px dot, 1 px ink stroke. HTML, not SVG:
+   scaling a positioned box stays on the compositor. */
 .co-ring-dot {
-  width: 100%; height: 100%; box-sizing: border-box; border-radius: 50%;
-  background: var(--ground); border: 1.5px solid var(--ink);
-  transform: scale(0); will-change: transform;
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  border: 1px solid var(--ink); transform: scale(0); will-change: transform;
+}
+.co-ring-dot::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px;
+  margin: -3px 0 0 -3px; border-radius: 50%; background: var(--ink);
 }
 .co-label { position: absolute; left: 0; top: 0; white-space: nowrap; }
 .co-label-inner { opacity: 0; will-change: opacity, transform; }
 .co-face {
   position: relative; display: block; margin: 0; padding: 0; border: 0; background: none;
-  font: inherit; color: inherit; text-align: left;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
 }
 .co-heading, .co-value { display: block; }
-.co-heading, .spec-heading {
-  margin: 0 0 0.3rem;
-  font: 600 13px/1.25 var(--sans); letter-spacing: 0.1em; text-transform: uppercase;
-  color: #3D2A96;
-}
-.co-value {
-  margin: 0; font: 500 27px/1.1 var(--serif); color: var(--ink);
-}
-.co-value.is-pending, .spec-value.is-pending { color: #4A4462; }
+.co-heading { font: 400 14px/1.3 var(--sans); color: var(--muted); }
+.co-value { margin-top: 4px; font: 500 20px/1.2 var(--sans); color: var(--ink); }
+.co-face:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
 
-.co-intro {
-  position: absolute; bottom: clamp(1.25rem, 6vh, 3rem); max-width: 30rem;
-  left: clamp(1.5rem, 4vw, 5rem);   /* below the left lens at any width */
-  will-change: opacity, transform; opacity: 0;
-}
-.co-title { font-size: clamp(1.75rem, 2.6vw, 2.25rem); margin-bottom: 0.35em; }
-.co-intro p { margin: 0; color: #4A4462; }
-
-/* Phones and reduced motion: the same callouts as a list under the still. */
-.callout-static { margin-top: 2.5rem; }
-.callout-static > p { color: var(--muted); }
-.seq .callout-static { display: none; }
-
-/* ---------- Spec list (brief 6.7) ---------- */
-
-.spec-list {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 1.75rem 2.5rem; margin: 1.5rem 0 0; padding: 0;
-}
-.spec { margin: 0; }
-.spec-value { margin: 0; font: 500 1.6rem/1.15 var(--serif); color: var(--ink); }
-.specs .spec-list { margin-top: 0; }
-.specs.band { padding: clamp(3rem, 6vw, 4.5rem) 0; }
-
-/* Expandable labels: open on hover, focus or click once every callout is
-   showing (callouts.js switches them on). The paragraph is a small card just
-   below the label's line, so opening it never moves anything else. */
-.co-face { cursor: pointer; }
-.co-face:focus-visible { outline: 2px solid #4A31A6; outline-offset: 6px; border-radius: 6px; }
 .co-more {
-  position: absolute; top: 0; right: -22px; width: 15px; height: 15px; border-radius: 50%;
-  border: 1.25px solid #3D2A96;
+  position: absolute; top: 1px; right: -22px; width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid var(--ink);
   /* Hidden by scale, not opacity: in Chrome an opacity change from exactly
      0 costs a layout, and this switches mid-scroll. */
   transform: scale(0);
 }
 .co-more::before, .co-more::after {
-  content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 1.25px;
-  background: #3D2A96; transform: translate(-50%, -50%);
+  content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 1px;
+  background: var(--ink); transform: translate(-50%, -50%);
 }
 .co-more::after { transform: translate(-50%, -50%) rotate(90deg); transition: transform 0.25s ease; }
 .co-label.is-open .co-more::after { transform: translate(-50%, -50%) rotate(0deg); }
 .co-detail {
-  position: absolute; left: 0; top: calc(100% + 18px); width: 17rem; margin: 0;
-  padding: 0.75rem 0.9rem; border-radius: 12px;
-  background: rgba(249, 248, 252, 0.95); box-shadow: 0 6px 24px rgba(42, 31, 92, 0.12);
-  font: 400 0.95rem/1.5 var(--sans); color: var(--ink); white-space: normal;
+  position: absolute; left: 0; top: calc(100% + 14px); width: 17rem; margin: 0;
+  padding: 0.75rem 0.9rem; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--hairline);
+  font: 400 14px/1.5 var(--sans); color: var(--ink); white-space: normal;
   opacity: 0; visibility: hidden; transform: translateY(-4px);
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
-.co-label.is-left .co-detail { left: auto; right: 0; }
 .co-label.is-open .co-detail {
   opacity: 1; visibility: visible; transform: none; pointer-events: auto;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
 }
-@media (prefers-reduced-motion: reduce) { .co-detail, .co-more, .co-more::after { transition: none; } }
-.spec-detail { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; max-width: 30rem; }
+@media (prefers-reduced-motion: reduce) { .co-detail, .co-more::after { transition: none; } }
+
+/* ---------- Spec list ---------- */
+
+.spec-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 1.5rem 2.5rem; margin: 1.5rem 0 0; padding: 0;
+}
+.spec { margin: 0; }
+.spec-heading { font-size: 14px; color: var(--muted); }
+.spec-value { margin: 4px 0 0; font-size: 20px; line-height: 1.2; font-weight: 500; color: var(--ink); }
+.spec-detail { margin: 0.35rem 0 0; color: var(--muted); font-size: 14px; max-width: 30rem; }
+
+/* ---------- Sections ---------- */
+
+.band { padding: clamp(4rem, 8vw, 6.5rem) 0; }
+.band-light { background: var(--light); }
+.specs h2 { margin-bottom: 1.5rem; }
+.specs .spec-list { margin-top: 0; }
+
+.reason-list, .steps, .team-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.5rem; }
+@media (min-width: 760px) { .reason-list, .steps, .team-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3rem; } }
+.reason p, .step p, .person p { color: var(--muted); }
+
+.icon { width: 4rem; height: 2.5rem; margin-bottom: 1.25rem; overflow: visible; }
+.icon * { fill: none; stroke: var(--ink); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.icon .dot-fill { fill: var(--ink); stroke: none; }
+
+.how h2 { margin-bottom: 2.5rem; }
+.step p.step-label { margin: 0 0 0.75rem; font-size: 14px; color: var(--muted); }
+
+.where p { font-size: 18px; color: var(--muted); }
+.where p:first-of-type { color: var(--ink); }
+
+.who[hidden] { display: none; }
+.person p.person-role { margin: -0.25rem 0 0.5rem; font-size: 14px; color: var(--muted); }
+
+.closing h2 { max-width: 30rem; margin-bottom: 1.5rem; }
+
+/* ---------- Footer ---------- */
+
+.site-footer { padding: 2.5rem 0 3rem; font-size: 14px; color: var(--muted); border-top: 1px solid rgba(18, 48, 42, 0.12); }
+.site-footer p { margin: 0 0 1rem; }
+.footer-legal { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+.footer-legal a, .footer-legal .contact { color: var(--muted); }
+.link-button {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 0.18em;
+}
+.link-button[hidden] { display: none; }
+
+/* ---------- Cookie banner (dormant while data/site.json says nonEssential: false) ---------- */
+
+.consent-banner {
+  position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 50;
+  max-width: 36rem; margin: 0 auto; padding: 1rem 1.25rem;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--hairline); border-radius: var(--radius); font-size: 14px;
+}
+.consent-banner p { margin: 0 0 0.75rem; }
+.consent-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.consent-actions .btn { min-width: 7rem; }
+
+/* ---------- Legal pages ---------- */
+
+.legal-page { background: var(--light); }
+.legal-top { display: flex; justify-content: center; padding: 1.25rem var(--gutter); }
+.legal-page main { padding: clamp(2rem, 5vw, 4rem) 0 4rem; }
+.legal-page .wrap { max-width: calc(70ch + 2 * var(--gutter)); }
+.legal-page h1 { font-size: clamp(32px, 5vw, 44px); margin-bottom: 0.25em; }
+.legal-page h2 { font-size: 20px; margin: 2rem 0 0.5rem; }
+.legal-page ul { padding-left: 1.25rem; }
+.legal-page li { margin-bottom: 0.4rem; }
+.legal-meta { color: var(--muted); font-size: 14px; }
+.legal-draft {
+  border: 1px solid var(--hairline); background: var(--card); padding: 0.75rem 1rem;
+  border-radius: var(--radius); font-size: 14px; color: var(--muted);
+}
+.ph { background: #FFF1B8; padding: 0 0.2em; border-radius: 2px; }

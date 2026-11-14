@@ -22,7 +22,7 @@ var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xnpdjprv';
   // Sent with each signup as policy_version, so every stored signup records
   // which privacy policy the person read (palpera-legal-pages.md, section 3).
   // Set to the policies' effective date when they go live.
-  var POLICY_VERSION = '[EFFECTIVE DATE]';
+  var POLICY_VERSION = '2026-11-14';
 
   Array.prototype.forEach.call(document.querySelectorAll('form[data-signup]'), function (form) {
     var input = form.querySelector('input[type="email"]');

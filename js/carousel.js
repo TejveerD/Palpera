@@ -90,7 +90,7 @@
   }, { passive: false });
 
   /* Scroll sequence handover. Scrolling back into the animation always
-     returns to violet, because the frames show the violet pod. */
+     returns to white, because the frames show the white pod. */
   if (section) {
     section.addEventListener('sequence:leave-end', function () {
       if (root.contains(document.activeElement)) document.activeElement.blur();
