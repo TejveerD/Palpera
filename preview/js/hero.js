@@ -13,7 +13,8 @@
  *
  *   paragraph, signup, headline  fade out over the first quarter of the move
  *   brand name                   one move from the text column to the top
- *                                centre, 32 px to 24 px (translate + scale)
+ *                                centre: starts as wide as the column, ends
+ *                                24 px (translate + scale)
  *   top links                    fade in over the last third
  *   statement                    fades in and out on the held last frame
  */
@@ -30,7 +31,7 @@
   // Mock-up geometry (1440 x 900 window, frame drawn 1440 x 810 from y 45).
   var MOCK = { w: 1440, frameTop: 45, frameH: 810 };
   var BLOCK_Y = 560, STATEMENT_Y = 720;   // top of the signup block and statement
-  var NAME_END_TOP = 12, NAME_END_SCALE = 24 / 32;
+  var NAME_END_TOP = 12;
   var MIN = 0.001;                        // never exactly 0 (see above)
 
   var g = null;                           // measured on layout
@@ -47,8 +48,16 @@
     var u = W / MOCK.w;
     // offsetLeft/Top ignore transforms, so the start position is read
     // without undoing the current move.
+    // TJ: the name starts big, filling the text column's width (the empty
+    // space above the glasses), and shrinks to the small name at the top
+    // centre. Its font size is fitted here, on resize only.
+    var colW = block.offsetWidth;
+    var f0 = parseFloat(getComputedStyle(brand).fontSize);
+    var fit = Math.min(f0 * colW / Math.max(1, brand.offsetWidth), H * 0.24);
+    brand.style.fontSize = fit.toFixed(2) + 'px';
     var x0 = brand.offsetLeft, y0 = brand.offsetTop, w = brand.offsetWidth;
-    var k = NAME_END_SCALE;
+    var endPx = Math.max(20, Math.min(24 * u, 34));
+    var k = endPx / fit;
     g = {
       dx: W / 2 - (w * k) / 2 - x0,
       dy: NAME_END_TOP * u - y0,
@@ -99,6 +108,7 @@
     g = null;
     [brand, nav, block, statement].forEach(function (el) {
       el.style.opacity = el.style.transform = el.style.visibility = el.style.top = '';
+      el.style.fontSize = '';
     });
   }
 

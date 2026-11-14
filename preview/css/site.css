@@ -208,7 +208,8 @@ a { color: var(--ink); text-underline-offset: 0.18em; }
 .seq .top { display: block; padding: 0; }
 .seq .brand {
   position: absolute; left: calc(832 * var(--u)); top: calc(36 * var(--u));
-  font-size: clamp(26px, calc(32 * var(--u)), 44px);
+  font-size: clamp(26px, calc(32 * var(--u)), 44px);   /* hero.js fits it to the column */
+  line-height: 0.9; letter-spacing: -0.01em;
   transform-origin: 0 0; transform: translate(0px, 0px) scale(1);   /* always a transform */
   will-change: transform; pointer-events: auto;
 }
