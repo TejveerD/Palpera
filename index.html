@@ -12,7 +12,7 @@
        third party when the page loads. -->
   <link rel="preload" href="fonts/bricolage-grotesque-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/bricolage-grotesque-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/site.css?v=20261114">
 
   <!-- Decide before first paint whether this visitor gets the scroll
        sequence. Phones (< 900 px) and reduced-motion visitors get the static
@@ -25,13 +25,13 @@
       document.documentElement.classList.add('js');
     })();
   </script>
-  <script src="js/callouts.js" defer></script>
-  <script src="js/hero.js" defer></script>
-  <script src="js/sequence.js" defer></script>
-  <script src="js/carousel.js" defer></script>
-  <script src="js/signup.js" defer></script>
-  <script src="js/team.js" defer></script>
-  <script src="js/consent.js" defer></script>
+  <script src="js/callouts.js?v=20261114" defer></script>
+  <script src="js/hero.js?v=20261114" defer></script>
+  <script src="js/sequence.js?v=20261114" defer></script>
+  <script src="js/carousel.js?v=20261114" defer></script>
+  <script src="js/signup.js?v=20261114" defer></script>
+  <script src="js/team.js?v=20261114" defer></script>
+  <script src="js/consent.js?v=20261114" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -42,7 +42,7 @@
          .seq class. -->
     <section class="sequence" id="top" aria-label="Palpera"
              data-frames="450"
-             data-frame-pattern="assets/sequence/frame_{n}.webp"
+             data-frame-pattern="assets/sequence/frame_{n}.webp?v=20261114"
              data-frame-pad="4">
       <div class="stage">
         <canvas class="stage-canvas" aria-hidden="true"></canvas>
@@ -62,7 +62,7 @@
           </header>
 
           <figure class="hero-still">
-            <img src="assets/stills/s1.webp" width="1600" height="900"
+            <img src="assets/stills/s1.webp?v=20261114" width="1600" height="900"
                  alt="Concept render: glasses half hidden behind a wall of fluted glass, with a white Palpera pod on the temple.">
             <figcaption class="render-label">Concept render. In development.</figcaption>
           </figure>
@@ -101,13 +101,13 @@
         <div class="carousel" data-carousel tabindex="0" role="group" id="colours"
              aria-roledescription="carousel" aria-label="Pod colours. Use the left and right arrow keys to change colour.">
           <div class="carousel-view" data-carousel-view>
-            <img class="carousel-img is-active" data-colour="white" src="assets/colours/white.webp" width="1600" height="900" loading="lazy" decoding="async"
+            <img class="carousel-img is-active" data-colour="white" src="assets/colours/white.webp?v=20261114" width="1600" height="900" loading="lazy" decoding="async"
                  alt="Concept render, close up: a white Palpera pod clipped to the temple of green glasses, with its sensor arm reaching toward the lens.">
-            <img class="carousel-img" data-colour="sand" src="assets/colours/sand.webp" width="1600" height="900" loading="lazy" decoding="async"
+            <img class="carousel-img" data-colour="sand" src="assets/colours/sand.webp?v=20261114" width="1600" height="900" loading="lazy" decoding="async"
                  alt="Concept render, close up: a sand Palpera pod clipped to the temple of warm brown glasses.">
-            <img class="carousel-img" data-colour="graphite" src="assets/colours/graphite.webp" width="1600" height="900" loading="lazy" decoding="async"
+            <img class="carousel-img" data-colour="graphite" src="assets/colours/graphite.webp?v=20261114" width="1600" height="900" loading="lazy" decoding="async"
                  alt="Concept render, close up: a graphite Palpera pod clipped to the temple of smoke grey glasses.">
-            <img class="carousel-img" data-colour="silver" src="assets/colours/silver.webp" width="1600" height="900" loading="lazy" decoding="async"
+            <img class="carousel-img" data-colour="silver" src="assets/colours/silver.webp?v=20261114" width="1600" height="900" loading="lazy" decoding="async"
                  alt="Concept render, close up: a silver Palpera pod clipped to the temple of clear glasses.">
           </div>
 
