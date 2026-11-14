@@ -107,7 +107,7 @@ The three statements in section 4 describe intended behaviour that has not been 
 ```
 
 - Environment variables: `PALPERA_OUT` (output folder), `PALPERA_QUALITY` (`preview`, `draft`, `final`), `PALPERA_SHOTS` (comma list: `hero`, `hero_transparent`, `lineup`, `side`, `closeup`, `prototype`, `turntable`), `PALPERA_VIDEO` (`auto`, `1`, `0`).
-- On TJ's laptop the script lives in `C:\Users\tejve\Palpera`, with no clone of the repo there. A full re-render of the sequence and colours takes about 11 minutes. TJ uploads the PNGs through GitHub's web upload (100 files per batch); Claude Code then sorts them into `concept-renders/website/`, runs `tools/frames_to_webp.py`, checks the result and pushes.
+- On TJ's laptop the script lives in `C:\Users\tejve\Palpera`, with no clone of the repo there. A full re-render of the sequence and colours takes about 11 minutes. TJ uploads the PNGs through GitHub's web upload (100 files per batch); Claude Code then copies them out (they are not kept in the repo), runs `tools/frames_to_webp.py`, checks the result and pushes.
 - The newest script (13 November, evening) keeps the repo's opening camera (lens 35, shift_x -0.22) and adds: `anchors.json` export, `PALPERA_SEQ_SCALE` for extra in-between frames, and `PALPERA_WORLD` / `PALPERA_FLOOR` / `PALPERA_FRAME` / `PALPERA_COLOURS` overrides. It renders the same frames as the version in the repo, so replacing the file does not require a re-render.
 - **Known trap:** never change an object's visibility while looping over `collection.all_objects`. It crashes Blender. The script hides whole collections instead; keep it that way.
 - The pod shape is invented (4.2 cm long, 1.15 cm tall, 0.62 cm thick). The prototype box (3.0 × 2.2 × 1.2 cm) is an estimate around a Seeed XIAO nRF52840 board, not a measured design.
@@ -233,7 +233,7 @@ Open, waiting on TJ:
 
 5. **Resized-window check.** TJ has confirmed the scroll works full screen. The fixes for non-maximised windows are pushed but he has not yet confirmed them on his laptop.
 6. **Input border contrast.** `#B5AFCB` is 1.99 to 1 against the page; the guideline for input edges is 3 to 1. It is a palette colour, so darkening it is TJ's call.
-7. **Repo size.** History is about 550 MB because of `concept-renders`. It does not affect the site but makes cloning slow. Removing it from history needs TJ's go-ahead, because it means a force push.
+7. **Repo size.** Done (14 November 2026, TJ approved): `concept-renders/turntable/`, `website/` and `website-299/` (about 555 MB of frame PNGs) were removed from the whole history and `main` was force-pushed. The master stills and the turntable video stay in `concept-renders/`.
 
 ## 9. Not in scope
 

@@ -41,10 +41,11 @@
   //   down  straight down; the label hangs below the end
   //   diag  down and to the left, ending in the clear part of the lens;
   //         the label hangs below the end
+  //   diagup  up and to the left; the label sits on the end (TJ, Fit)
   // Battery life ends higher than water resistance, so their labels clear.
   var PLACE = {
     sensor:   { dir: 'diag', end: [0.112, 0.80] },
-    clip:     { dir: 'up',   end: 0.10 },
+    clip:     { dir: 'diagup', end: [0.40, 0.10] },
     pod_top:  { dir: 'up',   end: 0.06 },
     ribs:     { dir: 'down', end: 0.62 },
     pod_rear: { dir: 'down', end: 0.47 }
@@ -221,6 +222,11 @@
         ey = Math.min(top + it.p.end * H, VH - MARGIN - lh - GAP);
         ey = Math.max(ey, ay + MIN_LINE);
         lx = ax; ly = ey + GAP;
+      } else if (it.p.dir === 'diagup') {
+        ex = it.p.end[0] * W;
+        ey = Math.max(top + it.p.end[1] * H, topClear(ex, ex + lw) + lh + GAP);
+        ey = Math.min(ey, ay - MIN_LINE);
+        lx = ex; ly = ey - GAP - lh;
       } else {
         ex = it.p.end[0] * W;
         ey = Math.min(top + it.p.end[1] * H, VH - MARGIN - lh - GAP);

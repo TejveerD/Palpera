@@ -4,7 +4,7 @@ Turn palpera_fluted.py renders into the files the fluted preview loads.
     python tools/fluted_to_site.py SEQ_DIR [--stills STILLS_DIR] [--site preview]
                                    [--quality 90] [--width 0]
 
-SEQ_DIR holds seq/frame_0001.png ... from an EXP_SEQ run (EXP=fl_site).
+SEQ_DIR holds seq/frame_0001.png (or .jpg) ... from an EXP_SEQ run (EXP=fl_site).
 STILLS_DIR holds one folder per colour from EXP_T=1 runs, e.g.
     sand/key_100.png  graphite/key_100.png  silver/key_100.png
 and an anchors.json from any of them (they share the close-up pose).
@@ -48,8 +48,9 @@ def main():
     ap.add_argument("--width", type=int, default=0)
     a = ap.parse_args()
 
-    frames = sorted(glob.glob(os.path.join(a.seq, "seq", "frame_*.png")))
-    nums = [int(re.search(r"(\d+)\.png$", f).group(1)) for f in frames]
+    frames = sorted(glob.glob(os.path.join(a.seq, "seq", "frame_*.png")) +
+                    glob.glob(os.path.join(a.seq, "seq", "frame_*.jpg")))
+    nums = [int(re.search(r"(\d+)\.(png|jpg)$", f).group(1)) for f in frames]
     if not frames or nums != list(range(1, len(frames) + 1)):
         sys.exit("need seq/frame_0001.png onward with no gaps (found %d files)" % len(frames))
 
@@ -77,6 +78,8 @@ def main():
     if a.stills:
         for d in sorted(glob.glob(os.path.join(a.stills, "*"))):
             key = os.path.join(d, "key_100.png")
+            if not os.path.isfile(key):
+                key = os.path.join(d, "key_100.jpg")
             if os.path.isfile(key):
                 name = os.path.basename(d)
                 save(key, os.path.join(a.site, "assets", "colours", name + ".webp"), a.quality, a.width)

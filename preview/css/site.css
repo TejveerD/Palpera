@@ -222,6 +222,8 @@ a { color: var(--ink); text-underline-offset: 0.18em; }
 .seq .top-nav { visibility: visible; }
 .top-link { font-size: 14px; line-height: 24px; color: var(--muted); text-decoration: none; }
 .top-link:hover { text-decoration: underline; }
+/* The end signup, once the hero signup has faded (TJ). */
+.top-cta { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 0.2em; }
 
 .seq .hero-block {
   position: absolute; left: calc(832 * var(--u)); top: 62vh;   /* hero.js sets top */
