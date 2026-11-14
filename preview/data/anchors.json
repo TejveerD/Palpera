@@ -1,8 +1,8 @@
 {
-  "frame": 60,
+  "frame": 450,
   "frame_size": [
-    960,
-    540
+    1600,
+    900
   ],
   "anchors": {
     "sensor": {
