@@ -1,30 +1,37 @@
 # Palpera coming-soon page
 
-One page, plain HTML, CSS and JavaScript, with no framework and no build step. GitHub Pages serves the repo as it is.
+Plain HTML, CSS and JavaScript, with no framework and no build step. GitHub Pages serves the repo as it is. Live since 14 November 2026 with the fluted-glass design (palpera-fluted-redesign.md, palpera-legal-pages.md).
 
 ```
-index.html
-css/site.css
-js/sequence.js        scroll sequence (canvas, desktop only)
-js/carousel.js        colour carousel
-js/callouts.js        pointer callouts on the held last frame + spec lists
-js/signup.js          Formspree signup (FORMSPREE_ENDPOINT lives here)
-data/specs.json       every spec value (edit this; empty = "Coming soon")
-data/anchors.json     where each callout points (from palpera_pod.py)
-docs/BRIEF.md         the build brief
-assets/hero/          stack.webp: hero stack still (phones, reduced motion)
-assets/sequence/      frame_0001.webp ... frame_0150.webp
-assets/colours/       violet / red / graphite / silver / sand .webp
-tools/palpera_pod.py        Blender scene script
+index.html                  the page (root = live site)
+privacy.html terms.html cookies.html refund.html   policy pages (effective 14 November 2026)
+css/site.css                tokens, Bricolage Grotesque (self-hosted in fonts/)
+js/sequence.js              scroll stage: canvas frames, phases, smoothing
+js/hero.js                  text over the frames: name, links, signup, statement
+js/callouts.js              five callouts on the held last frame + spec lists
+js/carousel.js              colour carousel
+js/signup.js                Formspree signup (FORMSPREE_ENDPOINT, POLICY_VERSION)
+js/consent.js               cookie gate, dormant while data/site.json says nonEssential: false
+js/team.js                  "Who we are", from data/team.json (hidden while empty)
+data/specs.json             every spec value (edit this; empty = "Coming soon")
+data/anchors.json           where each callout points (from palpera_fluted.py)
+assets/sequence/            frame_0001.webp ... frame_0450.webp (1600x900, q90)
+assets/colours/             white (= last frame) / sand / graphite / silver .webp
+assets/stills/s1.webp       first frame, for phones and reduced motion
+preview/                    staging copy (noindex): build and check changes here first
+tools/palpera_fluted.py     Blender scene script; render_fluted_full.ps1 runs it on Windows
+tools/fluted_to_site.py     renders -> WebP frames, stills, anchors (use --site . for the root)
 concept-renders/            master stills and the turntable video (not used by the page)
-tools/frames_to_webp.py     PNG renders -> WebP assets
+docs/BRIEF.md               the original build brief
 ```
 
-## Before launch: do not ship until all of these are done
+The full-quality JPEG renders are kept on TJ's laptop (`renders\fl_full`), not in the repo.
+
+## Launch checklist (done)
 
 1. **Real renders.** Done: `assets/` holds the WebP versions of the `sequence` and `colours` renders from `palpera_pod.py` (the source PNGs and turntable frames were removed from the repo history on 14 November 2026 to cut its size; they can be re-rendered with `tools/palpera_pod.py`).
 2. **Formspree endpoint.** Done: `https://formspree.io/f/xnpdjprv`, set in `FORMSPREE_ENDPOINT` at the top of `js/signup.js`.
-3. **Contact email.** Replace `[YOUR CONTACT EMAIL]` in the footer of `index.html`, ideally as a `mailto:` link.
+3. **Contact email.** Done: palperapod@gmail.com (a business address will replace it later; change it in every page's footer and in privacy.html and terms.html).
 
 Formspree's free plan (checked November 2026): 50 submissions a month, and submission history is kept for **30 days only**. Export the list from the Formspree dashboard regularly so no address is lost. Before the launch email, move the list into a mailing-list tool.
 
